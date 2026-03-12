@@ -564,7 +564,7 @@
           translateY: [0, -8],
           duration: 220,
           ease: "in(2)",
-          complete: () => {
+          onComplete: () => {
             heroIndex = (heroIndex + 1) % heroLines.length;
             setHeroLine(heroIndex);
 
@@ -791,7 +791,7 @@
         translateY: [0, -12],
         duration: 320,
         ease: "out(2)",
-        complete: () => {
+        onComplete: () => {
           els.questionBlock.classList.add("hidden");
           els.voteForm.classList.add("hidden");
           els.thankYouState.classList.remove("hidden");
