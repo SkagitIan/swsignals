@@ -563,12 +563,18 @@
     async function loadChoices(questionId) {
       const { data, error } = await supabase
         .from("choices")
-        .select("id, label, sort_order")
-        .eq("question_id", questionId)
-        .order("sort_order", { ascending: true });
+        .select("*")
+        .eq("question_id", questionId);
 
       if (error) throw error;
-      return data || [];
+
+      return (data || [])
+        .map((choice, index) => ({
+          id: choice.id,
+          label: choice.label || choice.choice_text || choice.answer_text || choice.text || `Option ${index + 1}`,
+          sort_order: choice.sort_order ?? choice.display_order ?? choice.position ?? index
+        }))
+        .sort((a, b) => a.sort_order - b.sort_order);
     }
 
     async function saveTopics() {
