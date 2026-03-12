@@ -137,6 +137,22 @@
       color: var(--muted);
     }
 
+    .hero-lines {
+      display: grid;
+      gap: .35rem;
+    }
+
+    .hero-line {
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: #0f172a;
+    }
+
+    .hero-pop {
+      color: #7c3aed;
+      text-shadow: 0 6px 14px rgba(124, 58, 237, .2);
+    }
+
     @media (max-width: 640px) {
       .float-blob { opacity: .24; filter: blur(20px); }
     }
@@ -150,7 +166,11 @@
   <main class="relative z-10 min-h-screen px-3 py-6 sm:px-4 sm:py-10 md:py-16">
     <div class="mx-auto w-full max-w-3xl">
       <div class="mb-6 text-center">
-        <h1 class="mt-3 text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-slate-900">One question a week.</h1>
+        <h1 class="mt-3 text-3xl sm:text-4xl md:text-5xl hero-lines" aria-label="One question once a week. Your voice once a week. One minute once a week.">
+          <span class="hero-line"><span class="hero-pop">One question</span> once a week.</span>
+          <span class="hero-line"><span class="hero-pop">Your voice</span> once a week.</span>
+          <span class="hero-line"><span class="hero-pop">One minute</span> once a week.</span>
+        </h1>
         <p class="mt-3 text-slate-700 max-w-2xl mx-auto">
           Quick civic input from real residents. Vote, add a thought, pick topics you care about.
         </p>
@@ -510,6 +530,23 @@
       }).join("");
     }
 
+    function animateHero() {
+      animate(".hero-line", {
+        opacity: [0, 1],
+        translateY: [14, 0],
+        delay: stagger(140),
+        duration: 550,
+        ease: "out(3)"
+      });
+
+      animate(".hero-pop", {
+        scale: [1, 1.06, 1],
+        delay: stagger(140),
+        duration: 900,
+        ease: "inOut(2)",
+      });
+    }
+
     function openNotifyModal() {
       els.notifyModal.classList.add("open");
       els.notifyModal.setAttribute("aria-hidden", "false");
@@ -802,6 +839,7 @@
     async function init() {
       renderTopics();
       renderHistory();
+      animateHero();
       runBackgroundMotion();
       setNotifyChannel("email");
       getSessionId();
