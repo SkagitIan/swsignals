@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sedro Listens</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root {
+      --bg1: #f8fafc;
+      --bg2: #eef2ff;
+      --card: rgba(255,255,255,.72);
+      --stroke: rgba(15,23,42,.10);
+      --text: #0f172a;
+      --muted: #475569;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(56,189,248,.10), transparent 26%),
+        radial-gradient(circle at 80% 20%, rgba(167,139,250,.10), transparent 24%),
+        radial-gradient(circle at 50% 80%, rgba(34,197,94,.08), transparent 26%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .08;
+      background-image:
+        linear-gradient(rgba(15,23,42,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15,23,42,.05) 1px, transparent 1px);
+      background-size: 24px 24px, 24px 24px;
+      mask-image: radial-gradient(circle at center, black 55%, transparent 100%);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .05;
+      background-image: radial-gradient(rgba(15,23,42,.45) .7px, transparent .7px);
+      background-size: 14px 14px;
+    }
+
+    .glass {
+      background: var(--card);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--stroke);
+      box-shadow: 0 20px 60px rgba(15,23,42,.10), inset 0 1px 0 rgba(255,255,255,.7);
+    }
+
+    .float-blob {
+      position: fixed;
+      border-radius: 9999px;
+      filter: blur(24px);
+      opacity: .35;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .choice, .topic-btn {
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+
+    .choice:hover, .topic-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .choice {
+      border: 1px solid rgba(15,23,42,.08);
+      background: rgba(255,255,255,.55);
+    }
+
+    .choice:hover {
+      border-color: rgba(56,189,248,.35);
+      background: rgba(255,255,255,.8);
+    }
+
+    .topic-btn {
+      border: 1px solid rgba(15,23,42,.08);
+      background: rgba(255,255,255,.55);
+      color: #0f172a;
+    }
+
+    .topic-btn.active {
+      background: linear-gradient(135deg, rgba(34,197,94,.16), rgba(56,189,248,.16));
+      border-color: rgba(56,189,248,.35);
+    }
+
+    .tiny {
+      font-size: .82rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 640px) {
+      .float-blob { opacity: .24; filter: blur(20px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="blob1" class="float-blob w-40 h-40 sm:w-48 sm:h-48 bg-sky-400/30 top-10 left-4 sm:left-8"></div>
+  <div id="blob2" class="float-blob w-44 h-44 sm:w-56 sm:h-56 bg-violet-400/30 top-24 sm:top-32 right-4 sm:right-8"></div>
+  <div id="blob3" class="float-blob w-36 h-36 sm:w-40 sm:h-40 bg-green-400/30 bottom-8 left-1/3"></div>
+
+  <main class="relative z-10 min-h-screen px-3 py-6 sm:px-4 sm:py-10 md:py-16">
+    <div class="mx-auto w-full max-w-3xl">
+      <div class="mb-6 text-center">
+        <p class="text-sm uppercase tracking-[0.35em] text-sky-700/80">Sedro Listens</p>
+        <h1 class="mt-3 text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-slate-900">One question a week.</h1>
+        <p class="mt-3 text-slate-700 max-w-2xl mx-auto">
+          Quick civic input from real residents. Vote, add a thought, pick topics you care about.
+        </p>
+      </div>
+
+      <section class="glass rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-5 md:p-8">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <p class="tiny">This week’s question</p>
+            <p id="dateRange" class="tiny mt-1"></p>
+          </div>
+          <div id="statusPill" class="rounded-full border border-slate-300 px-3 py-1 text-xs text-slate-700 bg-white/60">
+            Loading
+          </div>
+        </div>
+
+        <div class="mt-6">
+          <h2 id="questionText" class="text-2xl md:text-3xl font-bold leading-tight text-slate-900">
+            Loading question...
+          </h2>
+        </div>
+
+        <form id="voteForm" class="mt-6 space-y-5">
+          <div id="choicesWrap" class="space-y-3"></div>
+
+          <div>
+            <label for="comment" class="block mb-2 text-sm text-slate-700">
+              Anything else?
+            </label>
+            <textarea
+              id="comment"
+              rows="4"
+              maxlength="500"
+              placeholder="Optional comment..."
+              class="w-full rounded-2xl border border-slate-300 bg-white/80 px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-sky-400"
+            ></textarea>
+          </div>
+
+          <button
+            id="submitBtn"
+            type="submit"
+            class="w-full sm:w-auto rounded-2xl px-6 py-3 font-semibold text-slate-950 bg-white border border-slate-300 hover:translate-y-[-1px] transition"
+          >
+            Submit
+          </button>
+
+          <p id="submitMsg" class="tiny min-h-[1.25rem]"></p>
+        </form>
+
+        <div class="mt-8 border-t border-slate-200 pt-6">
+          <div class="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <h3 class="text-lg font-semibold text-slate-900">Topics you care about</h3>
+              <p class="tiny">Tap any topic. It saves automatically.</p>
+            </div>
+            <p id="topicMsg" class="tiny"></p>
+          </div>
+
+          <div id="topicsWrap" class="mt-4 flex flex-wrap gap-2"></div>
+        </div>
+      </section>
+
+      <p class="mt-6 text-center tiny max-w-2xl mx-auto">
+        This is an independent public feedback project. It is not a city-run platform, not an official vote,
+        and not a substitute for elections, public hearings, or council process.
+      </p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    import { animate, stagger } from "https://cdn.jsdelivr.net/npm/animejs/+esm";
+
+    const SUPABASE_URL = "https://pwpxefyzsngnrjqvutil.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_skqKhrUPn68yF_LpRCk1Gg_Z4Iu8CXD";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const TOPICS = [
+      "Public Safety", "Parks", "Roads", "Downtown", "Housing",
+      "Budget", "Youth", "Business", "Events", "Trails"
+    ];
+
+    const SESSION_KEY = "sedro_listens_session_id";
+    const TOPICS_KEY = "sedro_listens_topics";
+
+    let currentQuestion = null;
+    let currentChoices = [];
+    let savedResponseId = null;
+
+    const els = {
+      questionText: document.getElementById("questionText"),
+      dateRange: document.getElementById("dateRange"),
+      statusPill: document.getElementById("statusPill"),
+      choicesWrap: document.getElementById("choicesWrap"),
+      voteForm: document.getElementById("voteForm"),
+      submitBtn: document.getElementById("submitBtn"),
+      submitMsg: document.getElementById("submitMsg"),
+      comment: document.getElementById("comment"),
+      topicsWrap: document.getElementById("topicsWrap"),
+      topicMsg: document.getElementById("topicMsg"),
+    };
+
+    function getSessionId() {
+      let id = localStorage.getItem(SESSION_KEY);
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem(SESSION_KEY, id);
+      }
+      return id;
+    }
+
+    function getSavedTopics() {
+      try {
+        return JSON.parse(localStorage.getItem(TOPICS_KEY) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function saveTopicsLocal(topics) {
+      localStorage.setItem(TOPICS_KEY, JSON.stringify(topics));
+    }
+
+    function formatRange(start, end) {
+      const s = new Date(start);
+      const e = new Date(end);
+      return `${s.toLocaleDateString(undefined, { month: "short", day: "numeric" })} – ${e.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
+    }
+
+    function setStatus(text) {
+      els.statusPill.textContent = text;
+    }
+
+    function getSelectedChoiceId() {
+      const checked = document.querySelector('input[name="choice"]:checked');
+      return checked ? Number(checked.value) : null;
+    }
+
+    function getActiveTopics() {
+      return [...document.querySelectorAll(".topic-btn.active")].map(btn => btn.dataset.topic);
+    }
+
+    function disableForm(disabled) {
+      els.submitBtn.disabled = disabled;
+      els.submitBtn.classList.toggle("opacity-60", disabled);
+      els.submitBtn.classList.toggle("cursor-not-allowed", disabled);
+    }
+
+    function renderChoices() {
+      els.choicesWrap.innerHTML = currentChoices.map(choice => `
+        <label class="choice block rounded-2xl p-4 cursor-pointer">
+          <div class="flex items-start gap-3">
+            <input type="radio" name="choice" value="${choice.id}" class="mt-1 h-4 w-4 shrink-0" />
+            <div class="font-medium leading-snug text-slate-900">${choice.label}</div>
+          </div>
+        </label>
+      `).join("");
+
+      animate(".choice", {
+        opacity: [0, 1],
+        translateY: [14, 0],
+        delay: stagger(60),
+        duration: 450,
+        ease: "out(3)"
+      });
+    }
+
+    function applySavedTopicsToButtons() {
+      const saved = new Set(getSavedTopics());
+      document.querySelectorAll(".topic-btn").forEach(btn => {
+        btn.classList.toggle("active", saved.has(btn.dataset.topic));
+      });
+    }
+
+    function renderTopics() {
+      els.topicsWrap.innerHTML = TOPICS.map(topic => `
+        <button type="button" data-topic="${topic}" class="topic-btn rounded-full px-4 py-2 text-sm">
+          ${topic}
+        </button>
+      `).join("");
+
+      applySavedTopicsToButtons();
+
+      els.topicsWrap.querySelectorAll(".topic-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          btn.classList.toggle("active");
+          await saveTopics();
+        });
+      });
+
+      animate(".topic-btn", {
+        opacity: [0, 1],
+        scale: [0.96, 1],
+        delay: stagger(30),
+        duration: 360,
+        ease: "out(3)"
+      });
+    }
+
+    function hydrateQuestion(question) {
+      currentQuestion = question;
+      els.questionText.textContent = question.question_text;
+      els.dateRange.textContent = formatRange(question.starts_at, question.ends_at);
+      setStatus("Open");
+    }
+
+    async function loadQuestion() {
+      const now = new Date().toISOString();
+
+      const { data, error } = await supabase
+        .from("questions")
+        .select("id, question_text, starts_at, ends_at, status")
+        .eq("status", "active")
+        .lte("starts_at", now)
+        .gte("ends_at", now)
+        .order("starts_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error("No active question found");
+      return data;
+    }
+
+    async function loadChoices(questionId) {
+      const { data, error } = await supabase
+        .from("choices")
+        .select("id, label, sort_order")
+        .eq("question_id", questionId)
+        .order("sort_order", { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    }
+
+    async function saveTopics() {
+      const selectedTopics = getActiveTopics();
+      saveTopicsLocal(selectedTopics);
+
+      if (!savedResponseId) {
+        els.topicMsg.textContent = "Topics saved.";
+        setTimeout(() => { els.topicMsg.textContent = ""; }, 1200);
+        return;
+      }
+
+      const { error } = await supabase
+        .from("responses")
+        .update({ selected_topics: selectedTopics })
+        .eq("id", savedResponseId);
+
+      els.topicMsg.textContent = error ? error.message : "Topics saved.";
+      setTimeout(() => { els.topicMsg.textContent = ""; }, 1200);
+    }
+
+    async function restoreExistingResponse(questionId) {
+      const localId = localStorage.getItem(`response_${questionId}`);
+      if (!localId) return;
+
+      const { data, error } = await supabase
+        .from("responses")
+        .select("id, selected_topics")
+        .eq("id", localId)
+        .maybeSingle();
+
+      if (error || !data) return;
+
+      savedResponseId = data.id;
+      els.submitBtn.textContent = "Submitted";
+      els.submitBtn.disabled = true;
+      els.submitBtn.classList.add("opacity-60", "cursor-not-allowed");
+      els.submitMsg.textContent = "You already responded to this question.";
+
+      if (Array.isArray(data.selected_topics)) {
+        saveTopicsLocal(data.selected_topics);
+        applySavedTopicsToButtons();
+      }
+    }
+
+    async function submitVote(e) {
+      e.preventDefault();
+      els.submitMsg.textContent = "";
+
+      const choiceId = getSelectedChoiceId();
+      if (!choiceId) {
+        els.submitMsg.textContent = "Pick an answer first.";
+        return;
+      }
+
+      disableForm(true);
+
+      const payload = {
+        question_id: currentQuestion.id,
+        choice_id: choiceId,
+        comment: els.comment.value.trim() || null,
+        selected_topics: getSavedTopics(),
+        session_id: getSessionId()
+      };
+
+      const { data, error } = await supabase
+        .from("responses")
+        .insert(payload)
+        .select("id")
+        .single();
+
+      disableForm(false);
+
+      if (error) {
+        els.submitMsg.textContent = error.message;
+        return;
+      }
+
+      savedResponseId = data.id;
+      localStorage.setItem(`response_${currentQuestion.id}`, savedResponseId);
+
+      els.submitMsg.textContent = "Saved.";
+      els.submitBtn.textContent = "Submitted";
+      els.submitBtn.disabled = true;
+      els.submitBtn.classList.add("opacity-60", "cursor-not-allowed");
+
+      animate("#submitBtn", {
+        scale: [1, 1.04, 1],
+        duration: 260,
+        ease: "out(3)"
+      });
+    }
+
+    function runBackgroundMotion() {
+      animate("#blob1", {
+        translateX: [0, 20, -8, 0],
+        translateY: [0, -12, 8, 0],
+        scale: [1, 1.05, 0.97, 1],
+        duration: 11000,
+        loop: true,
+        alternate: true,
+        ease: "inOutSine"
+      });
+
+      animate("#blob2", {
+        translateX: [0, -16, 10, 0],
+        translateY: [0, 14, -10, 0],
+        scale: [1, 0.96, 1.04, 1],
+        duration: 13000,
+        loop: true,
+        alternate: true,
+        ease: "inOutSine"
+      });
+
+      animate("#blob3", {
+        translateX: [0, 14, -12, 0],
+        translateY: [0, -10, 12, 0],
+        scale: [1, 1.03, 0.96, 1],
+        duration: 15000,
+        loop: true,
+        alternate: true,
+        ease: "inOutSine"
+      });
+    }
+
+    async function init() {
+      renderTopics();
+      runBackgroundMotion();
+
+      try {
+        const question = await loadQuestion();
+        hydrateQuestion(question);
+
+        currentChoices = await loadChoices(question.id);
+        renderChoices();
+
+        await restoreExistingResponse(question.id);
+
+        animate(".glass", {
+          opacity: [0, 1],
+          translateY: [18, 0],
+          duration: 550,
+          ease: "out(3)"
+        });
+      } catch (err) {
+        setStatus("Offline");
+        els.questionText.textContent = "No active question right now.";
+        els.dateRange.textContent = "";
+        els.choicesWrap.innerHTML = `<p class="tiny">Check back later.</p>`;
+        els.voteForm.style.display = "none";
+        console.error(err);
+      }
+    }
+
+    els.voteForm.addEventListener("submit", submitVote);
+    init();
+  </script>
+</body>
+</html>
