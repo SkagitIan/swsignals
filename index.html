@@ -297,8 +297,27 @@
     const HISTORY_ITEMS = [
       {
         question: "Should downtown have one monthly car-free evening in summer?",
-        answer: "63% said yes, 27% maybe, 10% no.",
-        score: 63
+        results: [
+          { label: "Yes", percent: 63, barClass: "bg-emerald-500", textClass: "text-emerald-600" },
+          { label: "Maybe", percent: 27, barClass: "bg-sky-400", textClass: "text-sky-600" },
+          { label: "No", percent: 10, barClass: "bg-indigo-300", textClass: "text-indigo-500" }
+        ]
+      },
+      {
+        question: "Should city parks stay open until 10 PM on summer weekends?",
+        results: [
+          { label: "Yes", percent: 58, barClass: "bg-emerald-500", textClass: "text-emerald-600" },
+          { label: "Maybe", percent: 30, barClass: "bg-sky-400", textClass: "text-sky-600" },
+          { label: "No", percent: 12, barClass: "bg-indigo-300", textClass: "text-indigo-500" }
+        ]
+      },
+      {
+        question: "Should Main Street add more benches and shaded seating?",
+        results: [
+          { label: "Yes", percent: 71, barClass: "bg-emerald-500", textClass: "text-emerald-600" },
+          { label: "Maybe", percent: 20, barClass: "bg-sky-400", textClass: "text-sky-600" },
+          { label: "No", percent: 9, barClass: "bg-indigo-300", textClass: "text-indigo-500" }
+        ]
       }
     ];
 
@@ -469,15 +488,28 @@
     }
 
     function renderHistory() {
-      els.historyWrap.innerHTML = HISTORY_ITEMS.map(item => `
-        <article class="rounded-2xl border border-slate-200 bg-white/70 p-4">
-          <p class="text-sm font-semibold text-slate-900">${item.question}</p>
-          <p class="tiny mt-1">${item.answer}</p>
-          <div class="mt-2 mini-bar">
-            <span style="width:${item.score}%"></span>
+      els.historyWrap.innerHTML = HISTORY_ITEMS.map(item => {
+        const barSegments = item.results
+          .map(result => `<div class="${result.barClass} h-full" style="width: ${result.percent}%"></div>`)
+          .join("");
+        const labels = item.results
+          .map(result => `<span class="${result.textClass}">${result.percent}% ${result.label}</span>`)
+          .join("");
+
+        return `
+        <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h4 class="font-semibold text-slate-800 mb-4">${item.question}</h4>
+
+          <div class="flex h-3 w-full overflow-hidden rounded-full bg-slate-100 mb-4">
+            ${barSegments}
+          </div>
+
+          <div class="flex justify-between text-sm font-medium">
+            ${labels}
           </div>
         </article>
-      `).join("");
+      `;
+      }).join("");
     }
 
     function openNotifyModal() {
