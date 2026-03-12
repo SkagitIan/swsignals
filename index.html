@@ -165,11 +165,13 @@
 
       <section class="glass rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-5 md:p-8">
         <div id="questionBlock">
-        <div class="flex items-center justify-between gap-4">
-          <div>
-            <p class="tiny">This week’s question</p>
+        <div class="flex items-center justify-center gap-3">
+          <button id="prevQuestionBtn" type="button" class="rounded-full border border-slate-300 bg-white/70 px-3 py-1 text-xs text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed">← Back</button>
+          <div class="text-center min-w-[180px]">
+            <p id="questionCounter" class="tiny">Loading</p>
             <p id="dateRange" class="tiny mt-1"></p>
           </div>
+          <button id="nextQuestionBtn" type="button" class="rounded-full border border-slate-300 bg-white/70 px-3 py-1 text-xs text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed">Forward →</button>
           <div id="statusPill" class="rounded-full border border-slate-300 px-3 py-1 text-xs text-slate-700 bg-white/60">
             Loading
           </div>
@@ -281,12 +283,16 @@
     ];
 
     const SESSION_KEY = "sedro_listens_session_id";
+    const USER_KEY = "sedro_listens_user_id";
     const TOPICS_KEY = "sedro_listens_topics";
+    const RESPONDED_KEY = "sedro_listens_responded_questions";
 
     let currentQuestion = null;
     let currentChoices = [];
     let savedResponseId = null;
     let notifyChannel = "email";
+    let questionTimeline = [];
+    let questionIndex = 0;
 
     const HISTORY_ITEMS = [
       {
@@ -300,6 +306,9 @@
       questionText: document.getElementById("questionText"),
       dateRange: document.getElementById("dateRange"),
       statusPill: document.getElementById("statusPill"),
+      questionCounter: document.getElementById("questionCounter"),
+      prevQuestionBtn: document.getElementById("prevQuestionBtn"),
+      nextQuestionBtn: document.getElementById("nextQuestionBtn"),
       choicesWrap: document.getElementById("choicesWrap"),
       voteForm: document.getElementById("voteForm"),
       submitBtn: document.getElementById("submitBtn"),
@@ -318,13 +327,44 @@
       notifyMsg: document.getElementById("notifyMsg"),
     };
 
-    function getSessionId() {
-      let id = localStorage.getItem(SESSION_KEY);
+    function setCookie(name, value, days = 365) {
+      const maxAge = days * 24 * 60 * 60;
+      document.cookie = `${name}=${value}; path=/; max-age=${maxAge}; samesite=lax`;
+    }
+
+    function getPersistentId(key) {
+      let id = localStorage.getItem(key);
       if (!id) {
         id = crypto.randomUUID();
-        localStorage.setItem(SESSION_KEY, id);
+        localStorage.setItem(key, id);
       }
       return id;
+    }
+
+    function getSessionId() {
+      const id = getPersistentId(SESSION_KEY);
+      setCookie(SESSION_KEY, id, 7);
+      return id;
+    }
+
+    function getUserId() {
+      const id = getPersistentId(USER_KEY);
+      setCookie(USER_KEY, id, 365);
+      return id;
+    }
+
+    function getRespondedQuestionIds() {
+      try {
+        return JSON.parse(localStorage.getItem(RESPONDED_KEY) || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function markResponded(questionId) {
+      const ids = new Set(getRespondedQuestionIds());
+      ids.add(questionId);
+      localStorage.setItem(RESPONDED_KEY, JSON.stringify([...ids]));
     }
 
     function getSavedTopics() {
@@ -347,6 +387,19 @@
 
     function setStatus(text) {
       els.statusPill.textContent = text;
+    }
+
+    function resetQuestionState() {
+      savedResponseId = null;
+      els.voteForm.reset();
+      els.submitBtn.textContent = "Submit";
+      els.submitBtn.disabled = false;
+      els.submitBtn.classList.remove("opacity-60", "cursor-not-allowed");
+      els.submitMsg.textContent = "";
+      els.questionBlock.classList.remove("hidden");
+      els.voteForm.classList.remove("hidden");
+      els.voteForm.style.display = "";
+      els.thankYouState.classList.add("hidden");
     }
 
     function getSelectedChoiceId() {
@@ -452,24 +505,28 @@
       currentQuestion = question;
       els.questionText.textContent = question.question_text;
       els.dateRange.textContent = formatRange(question.starts_at, question.ends_at);
-      setStatus("Open");
+
+      const now = Date.now();
+      const starts = new Date(question.starts_at).getTime();
+      const ends = new Date(question.ends_at).getTime();
+      setStatus(now >= starts && now <= ends ? "Open" : "Closed");
+
+      els.questionCounter.textContent = `Question ${questionIndex + 1} of ${questionTimeline.length}`;
+      els.prevQuestionBtn.disabled = questionIndex === 0;
+      els.nextQuestionBtn.disabled = questionIndex >= questionTimeline.length - 1;
     }
 
-    async function loadQuestion() {
+    async function loadQuestionTimeline() {
       const now = new Date().toISOString();
 
       const { data, error } = await supabase
         .from("questions")
         .select("id, question_text, starts_at, ends_at, status")
-        .eq("status", "active")
         .lte("starts_at", now)
-        .gte("ends_at", now)
-        .order("starts_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order("starts_at", { ascending: true });
 
       if (error) throw error;
-      if (!data) throw new Error("No active question found");
+      if (!data || data.length === 0) throw new Error("No questions found");
       return data;
     }
 
@@ -503,23 +560,53 @@
       setTimeout(() => { els.topicMsg.textContent = ""; }, 1200);
     }
 
-    async function restoreExistingResponse(questionId) {
-      const localId = localStorage.getItem(`response_${questionId}`);
-      if (!localId) return;
-
-      const { data, error } = await supabase
-        .from("responses")
-        .select("id, selected_topics")
-        .eq("id", localId)
-        .maybeSingle();
-
-      if (error || !data) return;
-
-      savedResponseId = data.id;
+    function lockResponseForm(message) {
       els.submitBtn.textContent = "Submitted";
       els.submitBtn.disabled = true;
       els.submitBtn.classList.add("opacity-60", "cursor-not-allowed");
-      els.submitMsg.textContent = "You already responded to this question.";
+      els.submitMsg.textContent = message;
+    }
+
+    async function restoreExistingResponse(questionId) {
+      if (getRespondedQuestionIds().includes(questionId)) {
+        lockResponseForm("You already responded to this question.");
+      }
+
+      const localId = localStorage.getItem(`response_${questionId}`);
+      const userId = getUserId();
+
+      let data = null;
+      let error = null;
+
+      if (localId) {
+        const response = await supabase
+          .from("responses")
+          .select("id, selected_topics")
+          .eq("id", localId)
+          .maybeSingle();
+        data = response.data;
+        error = response.error;
+      }
+
+      if (!data) {
+        const response = await supabase
+          .from("responses")
+          .select("id, selected_topics")
+          .eq("question_id", questionId)
+          .eq("session_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        data = response.data;
+        error = response.error;
+      }
+
+      if (error || !data) return;
+
+      markResponded(questionId);
+      savedResponseId = data.id;
+      localStorage.setItem(`response_${questionId}`, savedResponseId);
+      lockResponseForm("You already responded to this question.");
 
       if (Array.isArray(data.selected_topics)) {
         saveTopicsLocal(data.selected_topics);
@@ -527,9 +614,28 @@
       }
     }
 
+    async function showQuestionAt(index) {
+      questionIndex = index;
+      const question = questionTimeline[questionIndex];
+      if (!question) return;
+
+      resetQuestionState();
+      hydrateQuestion(question);
+
+      currentChoices = await loadChoices(question.id);
+      renderChoices();
+      await restoreExistingResponse(question.id);
+    }
+
     async function submitVote(e) {
       e.preventDefault();
       els.submitMsg.textContent = "";
+
+      const questionId = currentQuestion.id;
+      if (getRespondedQuestionIds().includes(questionId)) {
+        lockResponseForm("You already responded to this question.");
+        return;
+      }
 
       const choiceId = getSelectedChoiceId();
       if (!choiceId) {
@@ -540,11 +646,11 @@
       disableForm(true);
 
       const payload = {
-        question_id: currentQuestion.id,
+        question_id: questionId,
         choice_id: choiceId,
         comment: els.comment.value.trim() || null,
         selected_topics: getSavedTopics(),
-        session_id: getSessionId()
+        session_id: getUserId()
       };
 
       const { data, error } = await supabase
@@ -561,7 +667,8 @@
       }
 
       savedResponseId = data.id;
-      localStorage.setItem(`response_${currentQuestion.id}`, savedResponseId);
+      localStorage.setItem(`response_${questionId}`, savedResponseId);
+      markResponded(questionId);
 
       els.submitMsg.textContent = "Saved.";
       els.submitBtn.textContent = "Submitted";
@@ -598,14 +705,20 @@
         return;
       }
 
+      const userId = getUserId();
       const payload = {
+        user_id: userId,
         channel: notifyChannel,
         email: notifyChannel === "email" ? contactValue : null,
         phone: notifyChannel === "sms" ? contactValue : null,
-        session_id: getSessionId()
+        session_id: userId,
+        is_active: true
       };
 
-      const { error } = await supabase.from("notify_subscriptions").insert(payload);
+      const conflictColumn = notifyChannel === "email" ? "email" : "phone";
+      const { error } = await supabase
+        .from("notify_subscriptions")
+        .upsert(payload, { onConflict: conflictColumn });
 
       if (error) {
         els.notifyMsg.textContent = error.message;
@@ -614,6 +727,7 @@
 
       els.notifyMsg.textContent = "Saved. Thanks!";
       els.notifyForm.reset();
+      getUserId();
       setTimeout(closeNotifyModal, 550);
     }
 
@@ -654,15 +768,13 @@
       renderHistory();
       runBackgroundMotion();
       setNotifyChannel("email");
+      getSessionId();
+      getUserId();
 
       try {
-        const question = await loadQuestion();
-        hydrateQuestion(question);
-
-        currentChoices = await loadChoices(question.id);
-        renderChoices();
-
-        await restoreExistingResponse(question.id);
+        questionTimeline = await loadQuestionTimeline();
+        questionIndex = questionTimeline.length - 1;
+        await showQuestionAt(questionIndex);
 
         animate(".glass", {
           opacity: [0, 1],
@@ -690,6 +802,12 @@
       btn.addEventListener("click", () => setNotifyChannel(btn.dataset.channel));
     });
     els.notifyForm.addEventListener("submit", saveNotification);
+    els.prevQuestionBtn.addEventListener("click", async () => {
+      if (questionIndex > 0) await showQuestionAt(questionIndex - 1);
+    });
+    els.nextQuestionBtn.addEventListener("click", async () => {
+      if (questionIndex < questionTimeline.length - 1) await showQuestionAt(questionIndex + 1);
+    });
     init();
   </script>
 </body>
