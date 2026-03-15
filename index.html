@@ -166,41 +166,18 @@
     }
 
     .tally-pie {
-      width: 170px;
-      height: 170px;
+      width: 260px;
+      height: 260px;
       margin: 0 auto;
       display: block;
     }
 
-    .tally-list {
-      margin-top: .75rem;
-      text-align: left;
-      display: grid;
-      gap: .4rem;
-    }
-
-    .tally-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: .5rem;
-      font-size: .9rem;
-      color: #065f46;
-    }
-
-    .tally-dot {
-      width: .75rem;
-      height: .75rem;
-      border-radius: 9999px;
-      margin-right: .4rem;
-      flex-shrink: 0;
-    }
-
-    .tally-label {
-      display: flex;
-      align-items: center;
-      min-width: 0;
-      font-weight: 600;
+    .tally-percent {
+      font-size: 10px;
+      font-weight: 700;
+      fill: #064e3b;
+      text-anchor: middle;
+      dominant-baseline: middle;
     }
 
     .tally-loading {
@@ -260,11 +237,8 @@
           <p class="mt-1 text-sm text-emerald-700">Your response was saved and helps shape future weekly questions.</p>
 
           <div class="tally-wrap">
-            <p class="text-sm font-semibold text-emerald-800">Current answer mix</p>
-            <p class="tiny text-emerald-700">Percent only — no total vote count shown.</p>
             <div id="tallyLoading" class="tally-loading">Loading chart…</div>
-            <svg id="tallyPie" class="tally-pie hidden" viewBox="0 0 120 120" role="img" aria-label="Current answer percentages"></svg>
-            <div id="tallyList" class="tally-list"></div>
+            <svg id="tallyPie" class="tally-pie hidden" viewBox="0 0 200 200" role="img" aria-label="Current answer percentages"></svg>
           </div>
         </div>
 
@@ -418,7 +392,6 @@
       notifyMsg: document.getElementById("notifyMsg"),
       tallyLoading: document.getElementById("tallyLoading"),
       tallyPie: document.getElementById("tallyPie"),
-      tallyList: document.getElementById("tallyList"),
     };
 
     function setCookie(name, value, days = 365) {
@@ -541,32 +514,26 @@
       items.forEach((item) => {
         const angle = (item.percent / 100) * 360;
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", createPieSlicePath(60, 60, 54, startAngle, startAngle + angle));
+        const endAngle = startAngle + angle;
+        path.setAttribute("d", createPieSlicePath(100, 100, 88, startAngle, endAngle));
         path.setAttribute("fill", item.color);
         els.tallyPie.appendChild(path);
-        startAngle += angle;
+        const midAngle = startAngle + (angle / 2);
+        const labelPoint = polarToCartesian(100, 100, 66, midAngle);
+        const percentLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        percentLabel.setAttribute("x", labelPoint.x.toFixed(2));
+        percentLabel.setAttribute("y", labelPoint.y.toFixed(2));
+        percentLabel.setAttribute("class", "tally-percent");
+        percentLabel.textContent = `${item.percent}%`;
+        els.tallyPie.appendChild(percentLabel);
+        startAngle = endAngle;
       });
-
-      const center = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      center.setAttribute("cx", "60");
-      center.setAttribute("cy", "60");
-      center.setAttribute("r", "22");
-      center.setAttribute("fill", "#ecfdf5");
-      els.tallyPie.appendChild(center);
-
-      els.tallyList.innerHTML = items.map(item => `
-        <div class="tally-item">
-          <div class="tally-label"><span class="tally-dot" style="background:${item.color}"></span>${item.label}</div>
-          <strong>${item.percent}%</strong>
-        </div>
-      `).join("");
     }
 
     async function showCurrentTally(questionId) {
       els.tallyLoading.classList.remove("hidden");
       els.tallyLoading.textContent = "Loading chart…";
       els.tallyPie.classList.add("hidden");
-      els.tallyList.innerHTML = "";
 
       const { data, error } = await supabase
         .from("responses")
