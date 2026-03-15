@@ -166,18 +166,30 @@
     }
 
     .tally-pie {
-      width: 260px;
+      width: 320px;
       height: 260px;
       margin: 0 auto;
       display: block;
+      overflow: visible;
     }
 
     .tally-percent {
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
-      fill: #064e3b;
+      fill: #0f172a;
       text-anchor: middle;
-      dominant-baseline: middle;
+    }
+
+    .tally-label {
+      font-size: 10px;
+      fill: #334155;
+      text-anchor: middle;
+    }
+
+    .tally-label-line {
+      stroke: rgba(15, 23, 42, .45);
+      stroke-width: 1.5;
+      fill: none;
     }
 
     .tally-loading {
@@ -238,7 +250,7 @@
 
           <div class="tally-wrap">
             <div id="tallyLoading" class="tally-loading">Loading chart…</div>
-            <svg id="tallyPie" class="tally-pie hidden" viewBox="0 0 200 200" role="img" aria-label="Current answer percentages"></svg>
+            <svg id="tallyPie" class="tally-pie hidden" viewBox="0 0 260 220" role="img" aria-label="Current answer percentages"></svg>
           </div>
         </div>
 
@@ -500,6 +512,16 @@
       ].join(" ");
     }
 
+    function darkenColor(hex, amount = 0.4) {
+      const normalizedHex = hex.replace("#", "");
+      const r = parseInt(normalizedHex.slice(0, 2), 16);
+      const g = parseInt(normalizedHex.slice(2, 4), 16);
+      const b = parseInt(normalizedHex.slice(4, 6), 16);
+
+      const shade = (value) => Math.max(0, Math.min(255, Math.round(value * (1 - amount))));
+      return `rgb(${shade(r)}, ${shade(g)}, ${shade(b)})`;
+    }
+
     function renderPieChart(items) {
       if (!items.length) {
         els.tallyLoading.textContent = "Chart unavailable right now.";
@@ -510,23 +532,65 @@
       els.tallyPie.classList.remove("hidden");
       els.tallyPie.innerHTML = "";
 
+      const cx = 130;
+      const cy = 92;
+      const radius = 72;
+      const depth = 12;
       let startAngle = 0;
+      const slices = [];
+
       items.forEach((item) => {
         const angle = (item.percent / 100) * 360;
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         const endAngle = startAngle + angle;
-        path.setAttribute("d", createPieSlicePath(100, 100, 88, startAngle, endAngle));
-        path.setAttribute("fill", item.color);
-        els.tallyPie.appendChild(path);
-        const midAngle = startAngle + (angle / 2);
-        const labelPoint = polarToCartesian(100, 100, 66, midAngle);
-        const percentLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        percentLabel.setAttribute("x", labelPoint.x.toFixed(2));
-        percentLabel.setAttribute("y", labelPoint.y.toFixed(2));
-        percentLabel.setAttribute("class", "tally-percent");
-        percentLabel.textContent = `${item.percent}%`;
-        els.tallyPie.appendChild(percentLabel);
+        slices.push({ ...item, angle, startAngle, endAngle });
         startAngle = endAngle;
+      });
+
+      slices
+        .slice()
+        .sort((a, b) => {
+          const aMidY = polarToCartesian(cx, cy, radius, a.startAngle + (a.angle / 2)).y;
+          const bMidY = polarToCartesian(cx, cy, radius, b.startAngle + (b.angle / 2)).y;
+          return aMidY - bMidY;
+        })
+        .forEach((slice) => {
+          const shadow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          shadow.setAttribute("d", createPieSlicePath(cx, cy + depth, radius, slice.startAngle, slice.endAngle));
+          shadow.setAttribute("fill", darkenColor(slice.color));
+          els.tallyPie.appendChild(shadow);
+        });
+
+      slices.forEach((slice) => {
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", createPieSlicePath(cx, cy, radius, slice.startAngle, slice.endAngle));
+        path.setAttribute("fill", slice.color);
+        path.setAttribute("stroke", "rgba(255,255,255,.55)");
+        path.setAttribute("stroke-width", "1");
+        els.tallyPie.appendChild(path);
+
+        const midAngle = slice.startAngle + (slice.angle / 2);
+        const innerPoint = polarToCartesian(cx, cy, radius + 2, midAngle);
+        const outerPoint = polarToCartesian(cx, cy, radius + 24, midAngle);
+        const textPoint = polarToCartesian(cx, cy, radius + 40, midAngle);
+
+        const connector = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        connector.setAttribute("d", `M ${innerPoint.x.toFixed(2)} ${innerPoint.y.toFixed(2)} L ${outerPoint.x.toFixed(2)} ${outerPoint.y.toFixed(2)}`);
+        connector.setAttribute("class", "tally-label-line");
+        els.tallyPie.appendChild(connector);
+
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", textPoint.x.toFixed(2));
+        label.setAttribute("y", (textPoint.y - 6).toFixed(2));
+        label.setAttribute("class", "tally-label");
+        label.textContent = slice.label;
+        els.tallyPie.appendChild(label);
+
+        const percentLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        percentLabel.setAttribute("x", textPoint.x.toFixed(2));
+        percentLabel.setAttribute("y", (textPoint.y + 8).toFixed(2));
+        percentLabel.setAttribute("class", "tally-percent");
+        percentLabel.textContent = `${slice.percent}%`;
+        els.tallyPie.appendChild(percentLabel);
       });
     }
 
