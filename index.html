@@ -149,6 +149,58 @@
       text-shadow: 0 6px 14px rgba(124, 58, 237, .2);
     }
 
+    .tally-wrap {
+      margin-top: 1rem;
+      padding: 1rem;
+      border: 1px solid rgba(16, 185, 129, .25);
+      border-radius: 1rem;
+      background: rgba(255, 255, 255, .55);
+    }
+
+    .tally-pie {
+      width: 170px;
+      height: 170px;
+      margin: 0 auto;
+      display: block;
+    }
+
+    .tally-list {
+      margin-top: .75rem;
+      text-align: left;
+      display: grid;
+      gap: .4rem;
+    }
+
+    .tally-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .5rem;
+      font-size: .9rem;
+      color: #065f46;
+    }
+
+    .tally-dot {
+      width: .75rem;
+      height: .75rem;
+      border-radius: 9999px;
+      margin-right: .4rem;
+      flex-shrink: 0;
+    }
+
+    .tally-label {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      font-weight: 600;
+    }
+
+    .tally-loading {
+      margin-top: .75rem;
+      color: #047857;
+      font-size: .85rem;
+    }
+
     @media (max-width: 640px) {
       .float-blob { opacity: .24; filter: blur(20px); }
     }
@@ -198,6 +250,14 @@
           <div class="text-4xl">✅</div>
           <h2 class="mt-2 text-2xl font-bold text-emerald-800">Thank you!</h2>
           <p class="mt-1 text-sm text-emerald-700">Your response was saved and helps shape future weekly questions.</p>
+
+          <div class="tally-wrap">
+            <p class="text-sm font-semibold text-emerald-800">Current answer mix</p>
+            <p class="tiny text-emerald-700">Percent only — no total vote count shown.</p>
+            <div id="tallyLoading" class="tally-loading">Loading chart…</div>
+            <svg id="tallyPie" class="tally-pie hidden" viewBox="0 0 120 120" role="img" aria-label="Current answer percentages"></svg>
+            <div id="tallyList" class="tally-list"></div>
+          </div>
         </div>
 
         <form id="voteForm" class="mt-6 space-y-5">
@@ -298,6 +358,7 @@
     let notifyChannel = "email";
     let questionTimeline = [];
     let questionIndex = 0;
+    const PIE_COLORS = ["#22c55e", "#0ea5e9", "#8b5cf6", "#f59e0b", "#ef4444", "#14b8a6"];
 
     const HISTORY_ITEMS = [
       {
@@ -347,6 +408,9 @@
       notifyForm: document.getElementById("notifyForm"),
       notifyInput: document.getElementById("notifyInput"),
       notifyMsg: document.getElementById("notifyMsg"),
+      tallyLoading: document.getElementById("tallyLoading"),
+      tallyPie: document.getElementById("tallyPie"),
+      tallyList: document.getElementById("tallyList"),
     };
 
     function setCookie(name, value, days = 365) {
@@ -433,6 +497,103 @@
       els.submitBtn.disabled = disabled;
       els.submitBtn.classList.toggle("opacity-60", disabled);
       els.submitBtn.classList.toggle("cursor-not-allowed", disabled);
+    }
+
+    function polarToCartesian(cx, cy, r, angle) {
+      const radians = (angle - 90) * (Math.PI / 180);
+      return {
+        x: cx + (r * Math.cos(radians)),
+        y: cy + (r * Math.sin(radians))
+      };
+    }
+
+    function createPieSlicePath(cx, cy, r, startAngle, endAngle) {
+      const start = polarToCartesian(cx, cy, r, endAngle);
+      const end = polarToCartesian(cx, cy, r, startAngle);
+      const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+      return [
+        `M ${cx} ${cy}`,
+        `L ${start.x} ${start.y}`,
+        `A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`,
+        "Z"
+      ].join(" ");
+    }
+
+    function renderPieChart(items) {
+      if (!items.length) {
+        els.tallyLoading.textContent = "Chart unavailable right now.";
+        return;
+      }
+
+      els.tallyLoading.classList.add("hidden");
+      els.tallyPie.classList.remove("hidden");
+      els.tallyPie.innerHTML = "";
+
+      let startAngle = 0;
+      items.forEach((item) => {
+        const angle = (item.percent / 100) * 360;
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", createPieSlicePath(60, 60, 54, startAngle, startAngle + angle));
+        path.setAttribute("fill", item.color);
+        els.tallyPie.appendChild(path);
+        startAngle += angle;
+      });
+
+      const center = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      center.setAttribute("cx", "60");
+      center.setAttribute("cy", "60");
+      center.setAttribute("r", "22");
+      center.setAttribute("fill", "#ecfdf5");
+      els.tallyPie.appendChild(center);
+
+      els.tallyList.innerHTML = items.map(item => `
+        <div class="tally-item">
+          <div class="tally-label"><span class="tally-dot" style="background:${item.color}"></span>${item.label}</div>
+          <strong>${item.percent}%</strong>
+        </div>
+      `).join("");
+    }
+
+    async function showCurrentTally(questionId) {
+      els.tallyLoading.classList.remove("hidden");
+      els.tallyLoading.textContent = "Loading chart…";
+      els.tallyPie.classList.add("hidden");
+      els.tallyList.innerHTML = "";
+
+      const { data, error } = await supabase
+        .from("responses")
+        .select("choice_id")
+        .eq("question_id", questionId);
+
+      if (error || !data || data.length === 0) {
+        els.tallyLoading.textContent = "Chart unavailable right now.";
+        return;
+      }
+
+      const countsByChoiceId = new Map();
+      data.forEach((row) => {
+        countsByChoiceId.set(row.choice_id, (countsByChoiceId.get(row.choice_id) || 0) + 1);
+      });
+
+      const total = data.length;
+      const chartItems = currentChoices
+        .map((choice, index) => {
+          const count = countsByChoiceId.get(choice.id) || 0;
+          return {
+            label: choice.label,
+            percent: Math.round((count / total) * 100),
+            color: PIE_COLORS[index % PIE_COLORS.length]
+          };
+        })
+        .filter(item => item.percent > 0)
+        .sort((a, b) => b.percent - a.percent);
+
+      const percentDelta = 100 - chartItems.reduce((sum, item) => sum + item.percent, 0);
+      if (chartItems.length && percentDelta !== 0) {
+        chartItems[0].percent += percentDelta;
+      }
+
+      renderPieChart(chartItems);
     }
 
     function renderChoices() {
@@ -779,7 +940,10 @@
             opacity: [0, 1],
             scale: [0.95, 1],
             duration: 380,
-            ease: "out(3)"
+            ease: "out(3)",
+            onComplete: () => {
+              showCurrentTally(questionId);
+            }
           });
         }
       });
