@@ -166,31 +166,12 @@
       overflow: hidden;
     }
 
-    .tally-pie {
+    .tally-canvas {
       width: min(100%, 420px);
       margin: 0 auto;
       display: block;
-      overflow: visible;
-      aspect-ratio: 320 / 260;
-      height: auto;
-    }
-
-    .tally-percent {
-      font-size: 11px;
-      font-weight: 700;
-      fill: #0f172a;
-      text-anchor: middle;
-    }
-
-    .tally-label {
-      font-size: 10px;
-      fill: #334155;
-    }
-
-    .tally-label-line {
-      stroke: rgba(15, 23, 42, .45);
-      stroke-width: 1.5;
-      fill: none;
+      aspect-ratio: 1 / 1;
+      max-height: 320px;
     }
 
     .tally-loading {
@@ -202,8 +183,6 @@
     @media (max-width: 640px) {
       .float-blob { opacity: .24; filter: blur(20px); }
       .tally-wrap { padding: .5rem; }
-      .tally-label { font-size: 9px; }
-      .tally-percent { font-size: 10px; }
     }
   </style>
 </head>
@@ -254,7 +233,7 @@
 
           <div class="tally-wrap">
             <div id="tallyLoading" class="tally-loading">Loading chart…</div>
-            <svg id="tallyPie" class="tally-pie hidden" viewBox="0 0 320 260" role="img" aria-label="Current answer percentages"></svg>
+            <canvas id="tallyChart" class="tally-canvas hidden" aria-label="Current answer percentages"></canvas>
           </div>
         </div>
 
@@ -335,6 +314,7 @@
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
     import { animate, stagger } from "https://cdn.jsdelivr.net/npm/animejs/+esm";
+    import Chart from "https://cdn.jsdelivr.net/npm/chart.js@4.4.3/+esm";
 
     const SUPABASE_URL = "https://pwpxefyzsngnrjqvutil.supabase.co";
     const SUPABASE_KEY = "sb_publishable_skqKhrUPn68yF_LpRCk1Gg_Z4Iu8CXD";
@@ -356,6 +336,7 @@
     let notifyChannel = "email";
     let questionTimeline = [];
     let questionIndex = 0;
+    let tallyChart = null;
     const PIE_COLORS = ["#22c55e", "#0ea5e9", "#8b5cf6", "#f59e0b", "#ef4444", "#14b8a6"];
 
     const HISTORY_ITEMS = [
@@ -407,7 +388,7 @@
       notifyInput: document.getElementById("notifyInput"),
       notifyMsg: document.getElementById("notifyMsg"),
       tallyLoading: document.getElementById("tallyLoading"),
-      tallyPie: document.getElementById("tallyPie"),
+      tallyChart: document.getElementById("tallyChart"),
     };
 
     function setCookie(name, value, days = 365) {
@@ -496,122 +477,55 @@
       els.submitBtn.classList.toggle("cursor-not-allowed", disabled);
     }
 
-    function polarToCartesian(cx, cy, r, angle) {
-      const radians = (angle - 90) * (Math.PI / 180);
-      return {
-        x: cx + (r * Math.cos(radians)),
-        y: cy + (r * Math.sin(radians))
-      };
-    }
-
-    function createPieSlicePath(cx, cy, r, startAngle, endAngle) {
-      const start = polarToCartesian(cx, cy, r, endAngle);
-      const end = polarToCartesian(cx, cy, r, startAngle);
-      const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-      return [
-        `M ${cx} ${cy}`,
-        `L ${start.x} ${start.y}`,
-        `A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`,
-        "Z"
-      ].join(" ");
-    }
-
-    function darkenColor(hex, amount = 0.4) {
-      const normalizedHex = hex.replace("#", "");
-      const r = parseInt(normalizedHex.slice(0, 2), 16);
-      const g = parseInt(normalizedHex.slice(2, 4), 16);
-      const b = parseInt(normalizedHex.slice(4, 6), 16);
-
-      const shade = (value) => Math.max(0, Math.min(255, Math.round(value * (1 - amount))));
-      return `rgb(${shade(r)}, ${shade(g)}, ${shade(b)})`;
-    }
-
-    function renderPieChart(items) {
+    function renderPieChart(items, totalVotes) {
       if (!items.length) {
         els.tallyLoading.textContent = "Chart unavailable right now.";
         return;
       }
 
       els.tallyLoading.classList.add("hidden");
-      els.tallyPie.classList.remove("hidden");
-      els.tallyPie.innerHTML = "";
+      els.tallyChart.classList.remove("hidden");
 
-      const compactLayout = window.matchMedia("(max-width: 640px)").matches;
-      const cx = 160;
-      const cy = compactLayout ? 108 : 102;
-      const radius = compactLayout ? 62 : 74;
-      const depth = compactLayout ? 10 : 12;
-      let startAngle = 0;
-      const slices = [];
+      if (tallyChart) {
+        tallyChart.destroy();
+      }
 
-      items.forEach((item) => {
-        const angle = (item.percent / 100) * 360;
-        const endAngle = startAngle + angle;
-        slices.push({ ...item, angle, startAngle, endAngle });
-        startAngle = endAngle;
-      });
-
-      slices
-        .slice()
-        .sort((a, b) => {
-          const aMidY = polarToCartesian(cx, cy, radius, a.startAngle + (a.angle / 2)).y;
-          const bMidY = polarToCartesian(cx, cy, radius, b.startAngle + (b.angle / 2)).y;
-          return aMidY - bMidY;
-        })
-        .forEach((slice) => {
-          const shadow = document.createElementNS("http://www.w3.org/2000/svg", "path");
-          shadow.setAttribute("d", createPieSlicePath(cx, cy + depth, radius, slice.startAngle, slice.endAngle));
-          shadow.setAttribute("fill", darkenColor(slice.color));
-          els.tallyPie.appendChild(shadow);
-        });
-
-      slices.forEach((slice) => {
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", createPieSlicePath(cx, cy, radius, slice.startAngle, slice.endAngle));
-        path.setAttribute("fill", slice.color);
-        path.setAttribute("stroke", "rgba(255,255,255,.55)");
-        path.setAttribute("stroke-width", "1");
-        els.tallyPie.appendChild(path);
-
-        const midAngle = slice.startAngle + (slice.angle / 2);
-        const innerPoint = polarToCartesian(cx, cy, radius + 2, midAngle);
-        const elbowPoint = polarToCartesian(cx, cy, radius + (compactLayout ? 14 : 18), midAngle);
-        const rightSide = Math.cos(((midAngle - 90) * Math.PI) / 180) >= 0;
-        const textPad = compactLayout ? 10 : 14;
-        const textXTarget = elbowPoint.x + (rightSide ? textPad : -textPad);
-        const textX = Math.max(24, Math.min(296, textXTarget));
-        const textY = Math.max(22, Math.min(238, elbowPoint.y));
-
-        const connector = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        connector.setAttribute(
-          "d",
-          `M ${innerPoint.x.toFixed(2)} ${innerPoint.y.toFixed(2)} L ${elbowPoint.x.toFixed(2)} ${elbowPoint.y.toFixed(2)} L ${textX.toFixed(2)} ${textY.toFixed(2)}`
-        );
-        connector.setAttribute("class", "tally-label-line");
-        els.tallyPie.appendChild(connector);
-
-        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        label.setAttribute("x", textX.toFixed(2));
-        label.setAttribute("y", (textY - 6).toFixed(2));
-        label.setAttribute("class", "tally-label");
-        label.setAttribute("text-anchor", rightSide ? "start" : "end");
-        label.textContent = slice.label;
-        els.tallyPie.appendChild(label);
-
-        const percentLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        percentLabel.setAttribute("x", textX.toFixed(2));
-        percentLabel.setAttribute("y", (textY + 8).toFixed(2));
-        percentLabel.setAttribute("class", "tally-percent");
-        percentLabel.setAttribute("text-anchor", rightSide ? "start" : "end");
-        percentLabel.textContent = `${slice.percent}%`;
-        els.tallyPie.appendChild(percentLabel);
+      tallyChart = new Chart(els.tallyChart, {
+        type: "pie",
+        data: {
+          labels: items.map((item) => item.label),
+          datasets: [{
+            data: items.map((item) => item.count),
+            backgroundColor: items.map((item) => item.color),
+            borderColor: "rgba(255,255,255,.8)",
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "bottom"
+            },
+            tooltip: {
+              callbacks: {
+                label(context) {
+                  const votes = context.parsed || 0;
+                  const percent = totalVotes ? Math.round((votes / totalVotes) * 100) : 0;
+                  return `${context.label}: ${percent}% (${votes} votes)`;
+                }
+              }
+            }
+          }
+        }
       });
     }
 
     async function showCurrentTally(questionId) {
       els.tallyLoading.classList.remove("hidden");
       els.tallyLoading.textContent = "Loading chart…";
-      els.tallyPie.classList.add("hidden");
+      els.tallyChart.classList.add("hidden");
 
       const { data, error } = await supabase
         .from("responses")
@@ -634,19 +548,14 @@
           const count = countsByChoiceId.get(choice.id) || 0;
           return {
             label: choice.label,
-            percent: Math.round((count / total) * 100),
+            count,
             color: PIE_COLORS[index % PIE_COLORS.length]
           };
         })
-        .filter(item => item.percent > 0)
-        .sort((a, b) => b.percent - a.percent);
+        .filter(item => item.count > 0)
+        .sort((a, b) => b.count - a.count);
 
-      const percentDelta = 100 - chartItems.reduce((sum, item) => sum + item.percent, 0);
-      if (chartItems.length && percentDelta !== 0) {
-        chartItems[0].percent += percentDelta;
-      }
-
-      renderPieChart(chartItems);
+      renderPieChart(chartItems, total);
     }
 
     function renderChoices() {
