@@ -159,18 +159,20 @@
 
     .tally-wrap {
       margin-top: 1rem;
-      padding: 1rem;
+      padding: .75rem;
       border: 1px solid rgba(16, 185, 129, .25);
       border-radius: 1rem;
       background: rgba(255, 255, 255, .55);
+      overflow: hidden;
     }
 
     .tally-pie {
-      width: 320px;
-      height: 260px;
+      width: min(100%, 420px);
       margin: 0 auto;
       display: block;
       overflow: visible;
+      aspect-ratio: 320 / 260;
+      height: auto;
     }
 
     .tally-percent {
@@ -183,7 +185,6 @@
     .tally-label {
       font-size: 10px;
       fill: #334155;
-      text-anchor: middle;
     }
 
     .tally-label-line {
@@ -200,6 +201,9 @@
 
     @media (max-width: 640px) {
       .float-blob { opacity: .24; filter: blur(20px); }
+      .tally-wrap { padding: .5rem; }
+      .tally-label { font-size: 9px; }
+      .tally-percent { font-size: 10px; }
     }
   </style>
 </head>
@@ -250,7 +254,7 @@
 
           <div class="tally-wrap">
             <div id="tallyLoading" class="tally-loading">Loading chart…</div>
-            <svg id="tallyPie" class="tally-pie hidden" viewBox="0 0 260 220" role="img" aria-label="Current answer percentages"></svg>
+            <svg id="tallyPie" class="tally-pie hidden" viewBox="0 0 320 260" role="img" aria-label="Current answer percentages"></svg>
           </div>
         </div>
 
@@ -532,10 +536,11 @@
       els.tallyPie.classList.remove("hidden");
       els.tallyPie.innerHTML = "";
 
-      const cx = 130;
-      const cy = 92;
-      const radius = 72;
-      const depth = 12;
+      const compactLayout = window.matchMedia("(max-width: 640px)").matches;
+      const cx = 160;
+      const cy = compactLayout ? 108 : 102;
+      const radius = compactLayout ? 62 : 74;
+      const depth = compactLayout ? 10 : 12;
       let startAngle = 0;
       const slices = [];
 
@@ -570,25 +575,34 @@
 
         const midAngle = slice.startAngle + (slice.angle / 2);
         const innerPoint = polarToCartesian(cx, cy, radius + 2, midAngle);
-        const outerPoint = polarToCartesian(cx, cy, radius + 24, midAngle);
-        const textPoint = polarToCartesian(cx, cy, radius + 40, midAngle);
+        const elbowPoint = polarToCartesian(cx, cy, radius + (compactLayout ? 14 : 18), midAngle);
+        const rightSide = Math.cos(((midAngle - 90) * Math.PI) / 180) >= 0;
+        const textPad = compactLayout ? 10 : 14;
+        const textXTarget = elbowPoint.x + (rightSide ? textPad : -textPad);
+        const textX = Math.max(24, Math.min(296, textXTarget));
+        const textY = Math.max(22, Math.min(238, elbowPoint.y));
 
         const connector = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        connector.setAttribute("d", `M ${innerPoint.x.toFixed(2)} ${innerPoint.y.toFixed(2)} L ${outerPoint.x.toFixed(2)} ${outerPoint.y.toFixed(2)}`);
+        connector.setAttribute(
+          "d",
+          `M ${innerPoint.x.toFixed(2)} ${innerPoint.y.toFixed(2)} L ${elbowPoint.x.toFixed(2)} ${elbowPoint.y.toFixed(2)} L ${textX.toFixed(2)} ${textY.toFixed(2)}`
+        );
         connector.setAttribute("class", "tally-label-line");
         els.tallyPie.appendChild(connector);
 
         const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        label.setAttribute("x", textPoint.x.toFixed(2));
-        label.setAttribute("y", (textPoint.y - 6).toFixed(2));
+        label.setAttribute("x", textX.toFixed(2));
+        label.setAttribute("y", (textY - 6).toFixed(2));
         label.setAttribute("class", "tally-label");
+        label.setAttribute("text-anchor", rightSide ? "start" : "end");
         label.textContent = slice.label;
         els.tallyPie.appendChild(label);
 
         const percentLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        percentLabel.setAttribute("x", textPoint.x.toFixed(2));
-        percentLabel.setAttribute("y", (textPoint.y + 8).toFixed(2));
+        percentLabel.setAttribute("x", textX.toFixed(2));
+        percentLabel.setAttribute("y", (textY + 8).toFixed(2));
         percentLabel.setAttribute("class", "tally-percent");
+        percentLabel.setAttribute("text-anchor", rightSide ? "start" : "end");
         percentLabel.textContent = `${slice.percent}%`;
         els.tallyPie.appendChild(percentLabel);
       });
