@@ -132,6 +132,14 @@
       background: linear-gradient(90deg, #22c55e, #0ea5e9);
     }
 
+    .history-card {
+      border: 1px solid rgba(15,23,42,.12);
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 8px 22px rgba(15,23,42,.08);
+      padding: 10px 12px;
+    }
+
     .tiny {
       font-size: .82rem;
       color: var(--muted);
@@ -240,7 +248,7 @@
         </div>
       </section>
 
-      <section class="mt-4">
+      <section class="mt-5">
         <div id="historyWrap" class="space-y-4"></div>
       </section>
 
@@ -496,10 +504,10 @@
           .join("");
 
         return `
-        <article class="py-1">
-          <h4 class="font-semibold text-slate-800 mb-4">${item.question}</h4>
+        <article class="history-card">
+          <h4 class="font-semibold text-slate-800 mb-3">${item.question}</h4>
 
-          <div class="flex h-3 w-full overflow-hidden rounded-full bg-slate-100 mb-4">
+          <div class="flex h-3 w-full overflow-hidden rounded-full bg-slate-100 mb-3">
             ${barSegments}
           </div>
 
