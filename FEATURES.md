@@ -36,3 +36,14 @@ This file tracks user-facing features and feature-level changes.
 - **Current behavior:** Prior sample questions/results are shown as compact cards with mini progress bars.
 - **Last updated:** 2026-03-17
 - **Change note:** Initial feature baseline documented.
+
+## 8) Recent Voice card grid + pie visualization
+- **Current behavior:** Recent Voice now renders as compact cards in a responsive grid (2-wide on small screens, 3-4 columns on larger screens), with mobile capped to 4 cards and each card showing a pie chart with in-slice percentages.
+- **Last updated:** 2026-03-17
+- **Change note:** Replaced horizontal result bars with square-style pie chart cards to improve scan speed and fit more results in less space.
+
+## 9) Voice page subscribe card
+- **Current behavior:** The Voice page now includes a bright subscribe card between the survey question and Recent Voice list, with a click-to-open mini form for email or SMS, saved to Supabase.
+- **Last updated:** 2026-03-17
+- **Change note:** Added inline subscription capture so users can opt into weekly reminders without leaving the Voice page.
+

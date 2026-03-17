@@ -36,7 +36,7 @@
       </nav>
     </header>
 
-    <main class="mx-auto max-w-4xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+    <main class="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
       <section class="mb-8">
         <p class="mb-3 text-sm font-semibold uppercase tracking-[0.16em] text-teal">This week’s voice</p>
         <h1 class="text-4xl font-semibold tracking-tight sm:text-5xl">Weekly Community Survey</h1>
@@ -68,6 +68,40 @@
 
         <p id="voice-message" class="mt-4 hidden rounded-xl border border-teal/20 bg-mist px-4 py-3 text-sm text-charcoal"></p>
       </section>
+
+      <section class="reveal mt-7 rounded-3xl border border-teal/30 bg-gradient-to-r from-[#fff9df] via-[#fff5cb] to-[#ffefae] p-6 shadow-[0_18px_40px_-28px_rgba(31,42,46,0.45)] sm:p-8">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-teal">Stay in the loop</p>
+            <h2 class="mt-2 text-2xl font-semibold tracking-tight">Get weekly Voice reminders</h2>
+            <p class="mt-2 text-sm text-slate">Tap subscribe, choose email or SMS, and we will send a reminder when the next question goes live.</p>
+          </div>
+          <button id="subscribe-toggle" class="interactive-btn inline-flex items-center justify-center rounded-full bg-charcoal px-5 py-2.5 text-sm font-semibold text-cream" type="button">
+            Subscribe
+          </button>
+        </div>
+
+        <form id="voice-subscribe-form" class="mt-5 hidden grid gap-3 rounded-2xl border border-charcoal/15 bg-white/70 p-4 sm:grid-cols-[180px_1fr_auto] sm:items-center">
+          <label class="flex items-center gap-2 text-sm font-medium">
+            <span>Method</span>
+            <select id="subscribe-method" class="rounded-full border border-charcoal/20 bg-cream px-3 py-2 text-sm outline-none ring-teal/30 transition focus:ring">
+              <option value="email">Email</option>
+              <option value="sms">SMS</option>
+            </select>
+          </label>
+          <input id="subscribe-contact" type="text" required placeholder="name@email.com or 3605551234" class="w-full rounded-full border border-charcoal/20 bg-cream px-4 py-2 text-sm outline-none ring-teal/30 transition focus:ring" />
+          <button class="interactive-btn rounded-full bg-teal px-5 py-2 text-sm font-semibold text-white" type="submit">Save</button>
+          <p id="subscribe-message" class="sm:col-span-3 hidden rounded-xl border border-teal/20 bg-mist px-4 py-2.5 text-sm"></p>
+        </form>
+      </section>
+
+      <section class="mt-12">
+        <div class="mb-6 flex items-end justify-between">
+          <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">Recent Voice</h2>
+          <a href="voice.html" class="text-sm font-semibold text-teal hover:text-charcoal">View All Results</a>
+        </div>
+        <div id="recent-voice-list" class="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4"></div>
+      </section>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
@@ -76,6 +110,7 @@
       integrity="sha256-CxLNt4NsMprRjM4m6CQQfghYvM0TQ6w8bNN8feg8Z2Q="
       crossorigin="anonymous"
     ></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
