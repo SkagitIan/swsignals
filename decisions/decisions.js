@@ -98,14 +98,22 @@ function renderDecisions() {
     .map(
       (item) => `
       <article class="group relative mb-8 rounded-2xl border border-transparent bg-cream/70 p-4 transition hover:border-charcoal/10 hover:bg-cream">
-        <span class="absolute -left-[1.7rem] top-6 h-3 w-3 rounded-full border-2 border-cream bg-teal"></span>
+        <span class="absolute -left-[1.9rem] top-7 h-3 w-3 rounded-full border-2 border-cream bg-teal"></span>
         <p class="text-xs font-semibold uppercase tracking-[0.08em] text-slate">${formatDate(item.date)}</p>
         <h2 class="mt-2 text-lg font-semibold tracking-tight">${item.title}</h2>
         <p class="mt-2 text-sm leading-6 text-slate">${item.description}</p>
-        <div class="mt-3 flex flex-wrap gap-2">${renderTagBadges(item.tags || [])}</div>
-        <button class="mt-4 inline-flex text-sm font-semibold text-teal hover:text-charcoal" data-slug="${item.slug}" type="button">
-          Open details
-        </button>
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-teal/25 text-sm text-teal transition hover:border-teal/45 hover:text-charcoal"
+            data-slug="${item.slug}"
+            type="button"
+            aria-label="Open details"
+            title="Open details"
+          >
+            <i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i>
+          </button>
+          ${renderTagBadges(item.tags || [])}
+        </div>
       </article>
     `
     )
