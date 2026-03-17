@@ -2,6 +2,11 @@
 
 This file tracks user-facing features and feature-level changes.
 
+## 14) Decisions timeline card polish (dot alignment + icon action)
+- **Current behavior:** On `/decisions/`, timeline dots now line up with the vertical rail like home, the extra helper sentence under the page title is removed, and each card shows an icon-only open-details button inline before the tags.
+- **Last updated:** 2026-03-17
+- **Change note:** Matched the timeline marker positioning to the proven home layout and simplified card actions/heading copy for a cleaner scan.
+
 ## 13) Clean page URLs + maps hub + dashboard gate messaging
 - **Current behavior:** Site navigation now uses extensionless routes (`/voice/`, `/decisions/`, `/maps/`, `/dashboard/`), a new `/maps/` page exists as the central map hub, the old `voice.html` path redirects to `/voice/`, timeline dots on Decisions are aligned to the timeline, and dashboard login works even when Supabase config is unavailable by falling back to the local dashboard password.
 - **Last updated:** 2026-03-17
