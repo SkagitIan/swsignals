@@ -20,6 +20,7 @@ const supabaseClient =
 const subscriptionTable = window.SUPABASE_SUBSCRIBERS_TABLE || 'notification_signups';
 const questionsTable = window.SUPABASE_QUESTIONS_TABLE || 'weekly_voice_questions';
 const responsesTable = window.SUPABASE_RESPONSES_TABLE || 'weekly_voice_responses';
+const decisionsTable = window.SUPABASE_DECISIONS_TABLE || 'civic_decisions';
 
 const fallbackVoiceQuestion = {
   id: null,
@@ -63,22 +64,49 @@ const fallbackRecentVoiceData = [
 
 const recentDecisionsData = [
   {
-    dateLabel: 'Tue, Apr 23 · Council Study Session',
+    slug: 'downtown-ada-sidewalk-repair-package',
+    date: '2024-04-23',
+    dateLabel: 'Tue, Apr 23, 2024',
     title: 'Council advanced a downtown ADA sidewalk repair package.',
-    summary: 'Phase one prioritizes high-foot-traffic blocks near schools and senior housing.',
-    url: '#'
+    description: 'Phase one prioritizes high-foot-traffic blocks near schools and senior housing to improve walkability and safety.',
+    tags: ['Infrastructure', 'Accessibility'],
+    sourceLink: '#'
   },
   {
-    dateLabel: 'Wed, Apr 17 · Planning Commission',
+    slug: 'mixed-use-zoning-amendment-public-hearing',
+    date: '2024-04-17',
+    dateLabel: 'Wed, Apr 17, 2024',
     title: 'Mixed-use zoning amendment moved to public hearing.',
-    summary: 'The draft sets height transitions and street activation requirements.',
-    url: '#'
+    description: 'The draft sets height transitions and street activation requirements near core corridors.',
+    tags: ['Planning', 'Zoning'],
+    sourceLink: '#'
   },
   {
-    dateLabel: 'Tue, Apr 9 · Council Meeting',
+    slug: 'trail-lighting-upgrade-northern-state-corridor',
+    date: '2024-04-09',
+    dateLabel: 'Tue, Apr 9, 2024',
     title: 'City approved trail lighting upgrade near Northern State corridor.',
-    summary: 'Installation begins in late summer pending utility coordination.',
-    url: '#'
+    description: 'Installation begins in late summer pending utility coordination and public works staging.',
+    tags: ['Parks', 'Public Safety'],
+    sourceLink: '#'
+  },
+  {
+    slug: 'main-street-crosswalk-timing-adjustment',
+    date: '2024-04-03',
+    dateLabel: 'Wed, Apr 3, 2024',
+    title: 'Main Street crosswalk timing adjustments approved for school commute hours.',
+    description: 'Signal timing updates focus on safer morning and afternoon crossings near schools and bus pickup points.',
+    tags: ['Transportation', 'Schools'],
+    sourceLink: '#'
+  },
+  {
+    slug: 'library-meeting-room-reservation-pilot',
+    date: '2024-03-27',
+    dateLabel: 'Wed, Mar 27, 2024',
+    title: 'Library launched a pilot for online community meeting room reservations.',
+    description: 'Residents can now reserve community rooms online as part of a six-month service pilot.',
+    tags: ['Library', 'Digital Services'],
+    sourceLink: '#'
   }
 ];
 
@@ -109,6 +137,19 @@ const mapLayerDefinitions = {
 let recentVoiceCharts = [];
 let recentVoiceData = [...fallbackRecentVoiceData];
 let activeVoiceQuestion = { ...fallbackVoiceQuestion };
+let homeDecisionsData = recentDecisionsData.slice(0, 3);
+
+function formatDecisionDate(dateValue) {
+  if (!dateValue) return '';
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return dateValue;
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function truncateText(text, maxLength) {
+  if (!text || text.length <= maxLength) return text || '';
+  return `${text.slice(0, maxLength).trimEnd()}…`;
+}
 
 function getVisibleRecentVoiceData() {
   return window.matchMedia('(max-width: 639px)').matches ? recentVoiceData.slice(0, 4) : recentVoiceData;
@@ -293,19 +334,41 @@ function renderDecisions() {
   const list = document.getElementById('decisions-list');
   if (!list) return;
 
-  list.innerHTML = recentDecisionsData
+  list.innerHTML = homeDecisionsData
     .map((item) => {
+      const preview = truncateText(item.description, 120);
       return `
       <article class="decision-item reveal group relative mb-8 rounded-2xl border border-transparent p-4 transition hover:border-charcoal/10 hover:bg-cream/70">
         <span class="absolute -left-[1.9rem] top-7 h-3 w-3 rounded-full border-2 border-cream bg-teal"></span>
         <p class="text-xs font-semibold uppercase tracking-[0.1em] text-slate">${item.dateLabel}</p>
         <h3 class="mt-2 text-lg font-semibold tracking-tight">${item.title}</h3>
-        <p class="mt-2 text-sm text-slate">${item.summary}</p>
-        <a href="${item.url}" class="mt-3 inline-flex text-sm font-semibold text-teal transition group-hover:text-charcoal">Video + details →</a>
+        <p class="mt-2 text-sm text-slate">${preview}</p>
       </article>
       `;
     })
     .join('');
+}
+
+async function loadDecisionsForHome() {
+  if (!supabaseClient) return;
+
+  const { data, error } = await supabaseClient
+    .from(decisionsTable)
+    .select('slug,date,title,description,tags,source_link,created_at')
+    .order('date', { ascending: false })
+    .limit(3);
+
+  if (error || !data || !data.length) return;
+
+  homeDecisionsData = data.map((item) => ({
+    slug: item.slug,
+    date: item.date,
+    dateLabel: formatDecisionDate(item.date),
+    title: item.title,
+    description: item.description,
+    tags: Array.isArray(item.tags) ? item.tags : [],
+    sourceLink: item.source_link || '#'
+  }));
 }
 
 function initMap() {
@@ -574,6 +637,7 @@ function setupRecentVoiceResponsiveRender() {
 
 async function init() {
   await loadVoiceFromSupabase();
+  await loadDecisionsForHome();
   renderVoiceQuestion();
   renderRecentVoice();
   buildRecentVoiceCharts();

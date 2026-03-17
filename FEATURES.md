@@ -2,6 +2,11 @@
 
 This file tracks user-facing features and feature-level changes.
 
+## 11) Decisions timeline page + Supabase-backed decision records
+- **Current behavior:** A dedicated `/decisions/` page now lists a longer timeline of civic decisions with colorful tag badges and opens details in a popup modal; the home page Recent Decisions section now shows the latest three items with full title/date and a 120-character description preview, plus a link to the full timeline.
+- **Last updated:** 2026-03-17
+- **Change note:** Added Supabase decision loading (`slug`, `date`, `title`, `description`, `tags`, `source link`) with five placeholders and created SQL setup guidance so decision content can be maintained from data while keeping the UI static-site friendly.
+
 ## 10) Crawl indexing defaults (robots + sitemap)
 - **Current behavior:** Search crawlers are allowed across the site, and a sitemap is published at the root listing the home and Voice pages on the production domain.
 - **Last updated:** 2026-03-17

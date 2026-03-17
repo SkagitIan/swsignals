@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Decisions Timeline | SedroWoolley.us</title>
+    <meta
+      name="description"
+      content="Browse the full Sedro-Woolley civic decisions timeline with dates, tags, summaries, and source links."
+    />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <link rel="canonical" href="https://sedrowoolley.us/decisions/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Decisions Timeline | SedroWoolley.us" />
+    <meta
+      property="og:description"
+      content="Explore a longer timeline of Sedro-Woolley civic decisions, including details and source links."
+    />
+    <meta property="og:url" content="https://sedrowoolley.us/decisions/" />
+    <meta property="og:image" content="https://sedrowoolley.us/og-decisions.jpg" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Decisions Timeline | SedroWoolley.us" />
+    <meta
+      name="twitter:description"
+      content="Explore a longer timeline of Sedro-Woolley civic decisions, including details and source links."
+    />
+    <meta name="twitter:image" content="https://sedrowoolley.us/og-decisions.jpg" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "Sedro-Woolley Decisions Timeline",
+        "url": "https://sedrowoolley.us/decisions/",
+        "description": "Long-form timeline of local civic decisions for Sedro-Woolley residents.",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "SedroWoolley.us",
+          "url": "https://sedrowoolley.us/"
+        }
+      }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              cream: '#F7F4EE',
+              charcoal: '#1F2A2E',
+              slate: '#526067',
+              teal: '#1E7A7A',
+              mist: '#DCE9E7',
+              sand: '#E9E1D3'
+            }
+          }
+        }
+      };
+    </script>
+  </head>
+  <body class="min-h-screen bg-cream text-charcoal antialiased">
+    <main class="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+      <a href="../" class="text-sm font-semibold text-teal hover:text-charcoal">← Back home</a>
+      <header class="mt-5">
+        <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">Decisions Timeline</h1>
+        <p class="mt-3 max-w-3xl text-slate">
+          A longer list of local civic decisions. Click any decision to open full details in a simple popup.
+        </p>
+      </header>
+
+      <section class="mt-8 rounded-3xl border border-charcoal/10 bg-white/70 p-5 shadow-sm sm:p-8">
+        <div id="decisions-timeline" class="relative ml-2 border-l border-charcoal/20 pl-6"></div>
+      </section>
+    </main>
+
+    <div id="decision-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-charcoal/50 px-4">
+      <div class="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl sm:p-7">
+        <div class="flex items-start justify-between gap-4">
+          <h2 id="modal-title" class="text-xl font-semibold tracking-tight"></h2>
+          <button id="modal-close" class="rounded-full border border-charcoal/15 px-3 py-1 text-sm font-semibold text-charcoal hover:bg-cream" type="button">
+            Close
+          </button>
+        </div>
+        <p id="modal-date" class="mt-3 text-sm font-semibold uppercase tracking-[0.08em] text-slate"></p>
+        <div id="modal-tags" class="mt-3 flex flex-wrap gap-2"></div>
+        <p id="modal-description" class="mt-4 text-sm leading-6 text-slate"></p>
+        <a id="modal-source" href="#" target="_blank" rel="noopener noreferrer" class="mt-5 inline-flex text-sm font-semibold text-teal hover:text-charcoal">
+          View source →
+        </a>
+      </div>
+    </div>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+      integrity="sha256-CxLNt4NsMprRjM4m6CQQfghYvM0TQ6w8bNN8feg8Z2Q="
+      crossorigin="anonymous"
+    ></script>
+    <script src="decisions.js"></script>
+  </body>
+</html>
