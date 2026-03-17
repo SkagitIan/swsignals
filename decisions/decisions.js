@@ -97,8 +97,8 @@ function renderDecisions() {
   timeline.innerHTML = decisions
     .map(
       (item) => `
-      <article class="group mb-8 rounded-2xl border border-transparent bg-cream/70 p-4 transition hover:border-charcoal/10 hover:bg-cream">
-        <span class="absolute -left-[1.85rem] mt-2 h-3 w-3 rounded-full border-2 border-cream bg-teal"></span>
+      <article class="group relative mb-8 rounded-2xl border border-transparent bg-cream/70 p-4 transition hover:border-charcoal/10 hover:bg-cream">
+        <span class="absolute -left-[1.7rem] top-6 h-3 w-3 rounded-full border-2 border-cream bg-teal"></span>
         <p class="text-xs font-semibold uppercase tracking-[0.08em] text-slate">${formatDate(item.date)}</p>
         <h2 class="mt-2 text-lg font-semibold tracking-tight">${item.title}</h2>
         <p class="mt-2 text-sm leading-6 text-slate">${item.description}</p>

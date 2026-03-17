@@ -10,11 +10,12 @@
   <body class="min-h-screen bg-cream text-charcoal antialiased" style="background:#F7F4EE;color:#1F2A2E;">
     <header class="border-b border-black/10 bg-white/70">
       <nav class="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-4 text-sm font-medium sm:px-6 lg:px-8">
-        <a href="../" class="font-semibold">SedroWoolley.us</a>
+        <a href="/" class="font-semibold">SedroWoolley.us</a>
         <div class="flex items-center gap-5">
-          <a class="text-teal hover:text-charcoal" href="../voice.html">Voice</a>
-          <a class="text-teal hover:text-charcoal" href="../decisions/">Decisions</a>
-          <a class="text-teal hover:text-charcoal" href="./">Dashboard</a>
+          <a class="text-teal hover:text-charcoal" href="/voice/">Voice</a>
+          <a class="text-teal hover:text-charcoal" href="/decisions/">Decisions</a>
+          <a class="text-teal hover:text-charcoal" href="/maps/">Maps</a>
+          <a class="text-teal hover:text-charcoal" href="/dashboard/">Dashboard</a>
         </div>
       </nav>
     </header>
@@ -88,9 +89,9 @@
 
       async function checkPassword(inputPassword) {
         if (!supabaseClient) {
-          showMessage('Supabase is not configured on this page.', true);
-          return false;
+          return { ok: false, reason: 'config' };
         }
+
         const { data, error } = await supabaseClient
           .from('dashboard_passwords')
           .select('password')
@@ -98,21 +99,36 @@
           .limit(1)
           .maybeSingle();
 
-        if (error || !data) return false;
-        return inputPassword === data.password;
+        if (error) {
+          return { ok: false, reason: 'query' };
+        }
+
+        if (!data || typeof data.password !== 'string') {
+          return { ok: false, reason: 'missing' };
+        }
+
+        return { ok: inputPassword === data.password, reason: 'mismatch' };
       }
 
       loginForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const inputPassword = passwordInput.value.trim();
-        if (!inputPassword) {
+        const rawPassword = passwordInput.value;
+        if (!rawPassword.trim()) {
           showMessage('Please enter a password.', true);
           return;
         }
 
-        const valid = await checkPassword(inputPassword);
-        if (!valid) {
-          showMessage('Incorrect password.', true);
+        const result = await checkPassword(rawPassword);
+        if (!result.ok) {
+          if (result.reason === 'config') {
+            showMessage('Dashboard is missing Supabase configuration on this page.', true);
+          } else if (result.reason === 'query') {
+            showMessage('Password check failed to load. Verify dashboard table access and RLS settings.', true);
+          } else if (result.reason === 'missing') {
+            showMessage('No active dashboard password was found in Supabase.', true);
+          } else {
+            showMessage('Incorrect password.', true);
+          }
           return;
         }
 
