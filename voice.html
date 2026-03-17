@@ -44,22 +44,24 @@
       </section>
 
       <section id="voice-survey-card" class="reveal rounded-3xl border border-charcoal/10 bg-white/70 p-7 shadow-[0_20px_50px_-30px_rgba(31,42,46,0.4)] sm:p-10">
-        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Week of May 6</p>
-        <h2 class="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">Should the city prioritize protected bike connections between schools and downtown?</h2>
+        <p id="voice-week-label" class="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Week of May 6</p>
+        <h2 id="voice-question-text" class="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">Should the city prioritize protected bike connections between schools and downtown?</h2>
 
         <form id="voice-form" class="mt-7 space-y-3">
-          <label class="option-row flex cursor-pointer items-center justify-between rounded-2xl border border-charcoal/15 bg-cream px-4 py-3 transition hover:border-teal/50">
-            <span class="font-medium">Yes</span>
-            <input type="radio" name="voice" value="Yes" class="h-4 w-4 accent-teal" />
-          </label>
-          <label class="option-row flex cursor-pointer items-center justify-between rounded-2xl border border-charcoal/15 bg-cream px-4 py-3 transition hover:border-teal/50">
-            <span class="font-medium">Maybe / Needs more detail</span>
-            <input type="radio" name="voice" value="Maybe" class="h-4 w-4 accent-teal" />
-          </label>
-          <label class="option-row flex cursor-pointer items-center justify-between rounded-2xl border border-charcoal/15 bg-cream px-4 py-3 transition hover:border-teal/50">
-            <span class="font-medium">No</span>
-            <input type="radio" name="voice" value="No" class="h-4 w-4 accent-teal" />
-          </label>
+          <div id="voice-options" class="space-y-3">
+            <label class="option-row flex cursor-pointer items-center justify-between rounded-2xl border border-charcoal/15 bg-cream px-4 py-3 transition hover:border-teal/50">
+              <span class="font-medium">Yes</span>
+              <input type="radio" name="voice" value="Yes" class="h-4 w-4 accent-teal" />
+            </label>
+            <label class="option-row flex cursor-pointer items-center justify-between rounded-2xl border border-charcoal/15 bg-cream px-4 py-3 transition hover:border-teal/50">
+              <span class="font-medium">Maybe / Needs more detail</span>
+              <input type="radio" name="voice" value="Maybe / Needs more detail" class="h-4 w-4 accent-teal" />
+            </label>
+            <label class="option-row flex cursor-pointer items-center justify-between rounded-2xl border border-charcoal/15 bg-cream px-4 py-3 transition hover:border-teal/50">
+              <span class="font-medium">No</span>
+              <input type="radio" name="voice" value="No" class="h-4 w-4 accent-teal" />
+            </label>
+          </div>
 
           <button id="submit-voice" type="submit" class="interactive-btn mt-4 rounded-full bg-teal px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5">
             Submit response
