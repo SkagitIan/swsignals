@@ -22,7 +22,7 @@
 
     <main class="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
       <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">Dashboard</h1>
-      <p class="mt-3 text-sm text-slate-700">Enter the dashboard password to view private admin content.</p>
+      <p class="mt-3 text-sm text-slate-700">Single-page tools for editing Voice and Decisions content.</p>
 
       <section id="login-section" class="mt-8 max-w-md rounded-2xl border border-black/10 bg-white/70 p-6">
         <form id="dashboard-login-form" class="grid gap-3">
@@ -33,12 +33,83 @@
         </form>
       </section>
 
-      <section id="dashboard-content" class="mt-8 hidden rounded-2xl border border-black/10 bg-white/70 p-6">
-        <h2 class="text-xl font-semibold">Private content placeholder</h2>
-        <p class="mt-2 text-sm text-slate-700">This area is ready to load future dashboard content from Supabase.</p>
-        <div id="dashboard-placeholder" class="mt-4 rounded-xl border border-dashed border-black/20 bg-[#faf7f0] p-4 text-sm text-slate-700">
-          No dashboard content yet. Add rows in Supabase table <code>dashboard_content</code> to populate this area.
+      <section id="dashboard-content" class="mt-8 hidden space-y-4">
+        <div class="rounded-2xl border border-black/10 bg-white/70 p-5 text-sm text-slate-700">
+          Each tool is collapsed by default. Click a tool name to open it.
         </div>
+
+        <section class="rounded-2xl border border-black/10 bg-white/70">
+          <button data-tool-toggle="voices-tool" class="flex w-full items-center justify-between px-5 py-4 text-left">
+            <span class="text-lg font-semibold">Tool 1: Voice Q&A Manager</span>
+            <span class="text-xs text-slate-600">Open / Close</span>
+          </button>
+          <div id="voices-tool" class="hidden border-t border-black/10 px-5 py-5">
+            <p class="text-sm text-slate-700">Add, edit, or delete questions and answers from the <code>questions</code> and <code>choices</code> tables.</p>
+
+            <form id="new-question-form" class="mt-4 grid gap-3 rounded-xl border border-black/10 bg-[#faf7f0] p-4">
+              <h3 class="font-semibold">Add new question</h3>
+              <input id="new-question-text" type="text" placeholder="Question text" class="rounded-lg border border-black/20 px-3 py-2" required />
+              <div class="grid gap-3 sm:grid-cols-2">
+                <label class="text-sm">Starts at
+                  <input id="new-question-starts" type="datetime-local" class="mt-1 w-full rounded-lg border border-black/20 px-3 py-2" required />
+                </label>
+                <label class="text-sm">Ends at
+                  <input id="new-question-ends" type="datetime-local" class="mt-1 w-full rounded-lg border border-black/20 px-3 py-2" required />
+                </label>
+              </div>
+              <label class="text-sm">Status
+                <select id="new-question-status" class="mt-1 w-full rounded-lg border border-black/20 px-3 py-2">
+                  <option value="draft">draft</option>
+                  <option value="live">live</option>
+                  <option value="closed">closed</option>
+                </select>
+              </label>
+              <label class="text-sm">Answer choices (one per line)
+                <textarea id="new-question-choices" rows="4" class="mt-1 w-full rounded-lg border border-black/20 px-3 py-2" placeholder="Yes\nNo\nNeed more info" required></textarea>
+              </label>
+              <button type="submit" class="w-fit rounded-full bg-black px-4 py-2 text-sm font-semibold text-white">Create question</button>
+            </form>
+
+            <p id="voices-status" class="mt-3 hidden rounded-xl border px-3 py-2 text-sm"></p>
+
+            <div class="mt-4">
+              <h3 class="font-semibold">Existing questions</h3>
+              <div id="voices-list" class="mt-3 space-y-3"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="rounded-2xl border border-black/10 bg-white/70">
+          <button data-tool-toggle="decisions-tool" class="flex w-full items-center justify-between px-5 py-4 text-left">
+            <span class="text-lg font-semibold">Tool 2: Decisions Manager</span>
+            <span class="text-xs text-slate-600">Open / Close</span>
+          </button>
+          <div id="decisions-tool" class="hidden border-t border-black/10 px-5 py-5">
+            <p class="text-sm text-slate-700">Create or modify rows in <code>civic_decisions</code>.</p>
+
+            <form id="decision-form" class="mt-4 grid gap-3 rounded-xl border border-black/10 bg-[#faf7f0] p-4">
+              <h3 class="font-semibold">Decision details</h3>
+              <input id="decision-id" type="hidden" />
+              <input id="decision-slug" type="text" placeholder="slug (example: city-council-budget-vote)" class="rounded-lg border border-black/20 px-3 py-2" required />
+              <input id="decision-date" type="date" class="rounded-lg border border-black/20 px-3 py-2" required />
+              <input id="decision-title" type="text" placeholder="Title" class="rounded-lg border border-black/20 px-3 py-2" required />
+              <textarea id="decision-description" rows="4" placeholder="Description" class="rounded-lg border border-black/20 px-3 py-2" required></textarea>
+              <input id="decision-tags" type="text" placeholder="Tags (comma separated)" class="rounded-lg border border-black/20 px-3 py-2" />
+              <input id="decision-source-link" type="url" placeholder="Source link (optional)" class="rounded-lg border border-black/20 px-3 py-2" />
+              <div class="flex flex-wrap gap-2">
+                <button type="submit" class="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white">Save decision</button>
+                <button id="decision-reset" type="button" class="rounded-full border border-black/20 px-4 py-2 text-sm font-semibold">Clear form</button>
+              </div>
+            </form>
+
+            <p id="decisions-status" class="mt-3 hidden rounded-xl border px-3 py-2 text-sm"></p>
+
+            <div class="mt-4">
+              <h3 class="font-semibold">Existing decisions</h3>
+              <div id="decisions-list" class="mt-3 space-y-2"></div>
+            </div>
+          </div>
+        </section>
       </section>
     </main>
 
@@ -65,8 +136,16 @@
       const messageEl = document.getElementById('dashboard-message');
       const loginSection = document.getElementById('login-section');
       const contentSection = document.getElementById('dashboard-content');
-      const placeholderEl = document.getElementById('dashboard-placeholder');
       const localFallbackPassword = window.DASHBOARD_PASSWORD || 'grandson2025';
+
+      const voicesStatusEl = document.getElementById('voices-status');
+      const voicesListEl = document.getElementById('voices-list');
+      const newQuestionForm = document.getElementById('new-question-form');
+
+      const decisionsStatusEl = document.getElementById('decisions-status');
+      const decisionsListEl = document.getElementById('decisions-list');
+      const decisionForm = document.getElementById('decision-form');
+      const decisionResetBtn = document.getElementById('decision-reset');
 
       function showMessage(text, isError = false) {
         messageEl.textContent = text;
@@ -74,19 +153,401 @@
         messageEl.className = `rounded-xl border px-3 py-2 text-sm ${isError ? 'border-red-300 bg-red-50 text-red-700' : 'border-teal-300 bg-teal-50 text-teal-700'}`;
       }
 
-      async function loadPlaceholderContent() {
-        if (!supabaseClient) return;
-        const { data } = await supabaseClient
-          .from('dashboard_content')
-          .select('title, body')
-          .eq('is_active', true)
-          .order('updated_at', { ascending: false })
+      function showToolStatus(element, text, isError = false) {
+        element.textContent = text;
+        element.classList.remove('hidden');
+        element.className = `mt-3 rounded-xl border px-3 py-2 text-sm ${isError ? 'border-red-300 bg-red-50 text-red-700' : 'border-teal-300 bg-teal-50 text-teal-700'}`;
+      }
+
+      function toLocalDateTimeValue(isoString) {
+        if (!isoString) return '';
+        const date = new Date(isoString);
+        const offsetMs = date.getTimezoneOffset() * 60000;
+        const local = new Date(date.getTime() - offsetMs);
+        return local.toISOString().slice(0, 16);
+      }
+
+      function toIsoString(localDateTime) {
+        if (!localDateTime) return null;
+        return new Date(localDateTime).toISOString();
+      }
+
+
+      function escapeHtml(value) {
+        return String(value || '')
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
+      function parseChoicesText(text) {
+        return text
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean);
+      }
+
+      function parseTags(text) {
+        return text
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean);
+      }
+
+      function attachToolToggles() {
+        document.querySelectorAll('[data-tool-toggle]').forEach((button) => {
+          button.addEventListener('click', () => {
+            const panelId = button.getAttribute('data-tool-toggle');
+            const panel = document.getElementById(panelId);
+            if (panel) panel.classList.toggle('hidden');
+          });
+        });
+      }
+
+      function buildChoiceRow(choice = {}) {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2';
+        row.dataset.choiceId = choice.id || '';
+        row.innerHTML = `
+          <input type="text" class="choice-input w-full rounded-lg border border-black/20 px-3 py-2" value="${escapeHtml(choice.label || '')}" placeholder="Choice label" />
+          <button type="button" class="remove-choice rounded-full border border-black/20 px-3 py-1 text-xs">Remove</button>
+        `;
+        row.querySelector('.remove-choice').addEventListener('click', () => row.remove());
+        return row;
+      }
+
+      async function loadVoiceQuestions() {
+        if (!supabaseClient) {
+          voicesListEl.innerHTML = '<p class="text-sm text-slate-600">Supabase config is missing. Add keys to enable this tool.</p>';
+          return;
+        }
+
+        const { data, error } = await supabaseClient
+          .from('questions')
+          .select('id, question_text, starts_at, ends_at, status, choices(id, label, sort_order)')
+          .order('starts_at', { ascending: false });
+
+        if (error) {
+          showToolStatus(voicesStatusEl, `Could not load questions: ${error.message}`, true);
+          return;
+        }
+
+        voicesListEl.innerHTML = '';
+        if (!data || !data.length) {
+          voicesListEl.innerHTML = '<p class="text-sm text-slate-600">No questions found yet.</p>';
+          return;
+        }
+
+        data.forEach((question) => {
+          const item = document.createElement('div');
+          item.className = 'rounded-xl border border-black/10 bg-white';
+          const choiceLines = (question.choices || [])
+            .sort((a, b) => a.sort_order - b.sort_order)
+            .map((choice) => `<li>${escapeHtml(choice.label)}</li>`)
+            .join('');
+
+          item.innerHTML = `
+            <button class="voice-item-toggle flex w-full items-center justify-between px-4 py-3 text-left">
+              <span class="text-sm font-semibold">${escapeHtml(question.question_text)}</span>
+              <span class="text-xs text-slate-600">${question.status}</span>
+            </button>
+            <div class="voice-item-body hidden border-t border-black/10 p-4">
+              <form class="voice-edit-form grid gap-3">
+                <input type="text" class="edit-question-text rounded-lg border border-black/20 px-3 py-2" value="${escapeHtml(question.question_text)}" required />
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <label class="text-sm">Starts at
+                    <input type="datetime-local" class="edit-starts-at mt-1 w-full rounded-lg border border-black/20 px-3 py-2" value="${toLocalDateTimeValue(question.starts_at)}" required />
+                  </label>
+                  <label class="text-sm">Ends at
+                    <input type="datetime-local" class="edit-ends-at mt-1 w-full rounded-lg border border-black/20 px-3 py-2" value="${toLocalDateTimeValue(question.ends_at)}" required />
+                  </label>
+                </div>
+                <label class="text-sm">Status
+                  <select class="edit-status mt-1 w-full rounded-lg border border-black/20 px-3 py-2">
+                    <option value="draft" ${question.status === 'draft' ? 'selected' : ''}>draft</option>
+                    <option value="live" ${question.status === 'live' ? 'selected' : ''}>live</option>
+                    <option value="closed" ${question.status === 'closed' ? 'selected' : ''}>closed</option>
+                  </select>
+                </label>
+                <div class="rounded-lg border border-black/10 bg-[#faf7f0] p-3">
+                  <p class="text-sm font-semibold">Choices</p>
+                  <div class="choice-rows mt-2 space-y-2"></div>
+                  <button type="button" class="add-choice mt-2 rounded-full border border-black/20 px-3 py-1 text-xs">Add choice</button>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <button type="submit" class="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white">Save</button>
+                  <button type="button" class="delete-question rounded-full border border-red-300 px-4 py-2 text-sm font-semibold text-red-700">Delete</button>
+                </div>
+              </form>
+              <div class="mt-3 text-xs text-slate-600">Current choices:<ul class="ml-5 mt-1 list-disc">${choiceLines || '<li>None</li>'}</ul></div>
+            </div>
+          `;
+
+          const body = item.querySelector('.voice-item-body');
+          item.querySelector('.voice-item-toggle').addEventListener('click', () => body.classList.toggle('hidden'));
+
+          const choiceRows = item.querySelector('.choice-rows');
+          (question.choices || []).sort((a, b) => a.sort_order - b.sort_order).forEach((choice) => choiceRows.appendChild(buildChoiceRow(choice)));
+
+          item.querySelector('.add-choice').addEventListener('click', () => {
+            choiceRows.appendChild(buildChoiceRow());
+          });
+
+          item.querySelector('.voice-edit-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const questionText = item.querySelector('.edit-question-text').value.trim();
+            const startsAt = toIsoString(item.querySelector('.edit-starts-at').value);
+            const endsAt = toIsoString(item.querySelector('.edit-ends-at').value);
+            const status = item.querySelector('.edit-status').value;
+            if (!questionText || !startsAt || !endsAt) {
+              showToolStatus(voicesStatusEl, 'Question text and dates are required.', true);
+              return;
+            }
+
+            const { error: updateError } = await supabaseClient
+              .from('questions')
+              .update({ question_text: questionText, starts_at: startsAt, ends_at: endsAt, status })
+              .eq('id', question.id);
+
+            if (updateError) {
+              showToolStatus(voicesStatusEl, `Could not save question: ${updateError.message}`, true);
+              return;
+            }
+
+            const existingIds = (question.choices || []).map((choice) => choice.id);
+            const seenExistingIds = [];
+            const upserts = [];
+
+            [...choiceRows.querySelectorAll('[data-choice-id]')].forEach((row, index) => {
+              const label = row.querySelector('.choice-input').value.trim();
+              const rawId = row.dataset.choiceId;
+              if (!label) return;
+              if (rawId) seenExistingIds.push(Number(rawId));
+              upserts.push({ id: rawId ? Number(rawId) : undefined, label, sort_order: index, question_id: question.id });
+            });
+
+            const toDelete = existingIds.filter((id) => !seenExistingIds.includes(id));
+            if (toDelete.length) {
+              const { error: deleteChoicesError } = await supabaseClient.from('choices').delete().in('id', toDelete);
+              if (deleteChoicesError) {
+                showToolStatus(voicesStatusEl, `Could not remove deleted choices: ${deleteChoicesError.message}`, true);
+                return;
+              }
+            }
+
+            for (const choice of upserts) {
+              if (choice.id) {
+                const { error: choiceUpdateError } = await supabaseClient
+                  .from('choices')
+                  .update({ label: choice.label, sort_order: choice.sort_order })
+                  .eq('id', choice.id);
+                if (choiceUpdateError) {
+                  showToolStatus(voicesStatusEl, `Could not update a choice: ${choiceUpdateError.message}`, true);
+                  return;
+                }
+              } else {
+                const { error: choiceInsertError } = await supabaseClient
+                  .from('choices')
+                  .insert({ label: choice.label, sort_order: choice.sort_order, question_id: choice.question_id });
+                if (choiceInsertError) {
+                  showToolStatus(voicesStatusEl, `Could not add a choice: ${choiceInsertError.message}`, true);
+                  return;
+                }
+              }
+            }
+
+            showToolStatus(voicesStatusEl, 'Question saved.');
+            await loadVoiceQuestions();
+          });
+
+          item.querySelector('.delete-question').addEventListener('click', async () => {
+            const confirmed = window.confirm('Delete this question and all choices?');
+            if (!confirmed) return;
+
+            const { error: deleteChoicesError } = await supabaseClient.from('choices').delete().eq('question_id', question.id);
+            if (deleteChoicesError) {
+              showToolStatus(voicesStatusEl, `Could not delete choices: ${deleteChoicesError.message}`, true);
+              return;
+            }
+
+            const { error: deleteQuestionError } = await supabaseClient.from('questions').delete().eq('id', question.id);
+            if (deleteQuestionError) {
+              showToolStatus(voicesStatusEl, `Could not delete question: ${deleteQuestionError.message}`, true);
+              return;
+            }
+
+            showToolStatus(voicesStatusEl, 'Question deleted.');
+            await loadVoiceQuestions();
+          });
+
+          voicesListEl.appendChild(item);
+        });
+      }
+
+      newQuestionForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!supabaseClient) {
+          showToolStatus(voicesStatusEl, 'Supabase config is missing. Add keys first.', true);
+          return;
+        }
+
+        const questionText = document.getElementById('new-question-text').value.trim();
+        const startsAt = toIsoString(document.getElementById('new-question-starts').value);
+        const endsAt = toIsoString(document.getElementById('new-question-ends').value);
+        const status = document.getElementById('new-question-status').value;
+        const choices = parseChoicesText(document.getElementById('new-question-choices').value);
+
+        if (!questionText || !startsAt || !endsAt || !choices.length) {
+          showToolStatus(voicesStatusEl, 'Question, dates, and at least one choice are required.', true);
+          return;
+        }
+
+        const { data: questionRows, error: questionError } = await supabaseClient
+          .from('questions')
+          .insert({ question_text: questionText, starts_at: startsAt, ends_at: endsAt, status })
+          .select('id')
           .limit(1);
 
-        if (data && data.length) {
-          placeholderEl.innerHTML = `<p class="font-semibold">${data[0].title}</p><p class="mt-2">${data[0].body}</p>`;
+        if (questionError || !questionRows || !questionRows[0]) {
+          showToolStatus(voicesStatusEl, `Could not create question: ${questionError ? questionError.message : 'unknown error'}`, true);
+          return;
         }
+
+        const rows = choices.map((label, index) => ({ question_id: questionRows[0].id, label, sort_order: index }));
+        const { error: choicesError } = await supabaseClient.from('choices').insert(rows);
+        if (choicesError) {
+          showToolStatus(voicesStatusEl, `Question created, but choices failed: ${choicesError.message}`, true);
+          return;
+        }
+
+        newQuestionForm.reset();
+        showToolStatus(voicesStatusEl, 'Question and choices created.');
+        await loadVoiceQuestions();
+      });
+
+      function fillDecisionForm(decision) {
+        document.getElementById('decision-id').value = decision.id || '';
+        document.getElementById('decision-slug').value = decision.slug || '';
+        document.getElementById('decision-date').value = decision.date || '';
+        document.getElementById('decision-title').value = decision.title || '';
+        document.getElementById('decision-description').value = decision.description || '';
+        document.getElementById('decision-tags').value = (decision.tags || []).join(', ');
+        document.getElementById('decision-source-link').value = decision.source_link || '';
       }
+
+      function resetDecisionForm() {
+        decisionForm.reset();
+        document.getElementById('decision-id').value = '';
+      }
+
+      async function loadDecisions() {
+        if (!supabaseClient) {
+          decisionsListEl.innerHTML = '<p class="text-sm text-slate-600">Supabase config is missing. Add keys to enable this tool.</p>';
+          return;
+        }
+
+        const { data, error } = await supabaseClient
+          .from('civic_decisions')
+          .select('id, slug, date, title, description, tags, source_link')
+          .order('date', { ascending: false });
+
+        if (error) {
+          showToolStatus(decisionsStatusEl, `Could not load decisions: ${error.message}`, true);
+          return;
+        }
+
+        decisionsListEl.innerHTML = '';
+        if (!data || !data.length) {
+          decisionsListEl.innerHTML = '<p class="text-sm text-slate-600">No decisions found yet.</p>';
+          return;
+        }
+
+        data.forEach((decision) => {
+          const row = document.createElement('div');
+          row.className = 'flex items-center justify-between rounded-lg border border-black/10 bg-white px-3 py-2 text-sm';
+          row.innerHTML = `
+            <div>
+              <p class="font-semibold">${escapeHtml(decision.title)}</p>
+              <p class="text-xs text-slate-600">${decision.date} · ${escapeHtml(decision.slug)}</p>
+            </div>
+            <div class="flex gap-2">
+              <button class="edit-decision rounded-full border border-black/20 px-3 py-1 text-xs">Edit</button>
+              <button class="delete-decision rounded-full border border-red-300 px-3 py-1 text-xs text-red-700">Delete</button>
+            </div>
+          `;
+
+          row.querySelector('.edit-decision').addEventListener('click', () => {
+            fillDecisionForm(decision);
+            showToolStatus(decisionsStatusEl, `Editing: ${escapeHtml(decision.title)}`);
+          });
+
+          row.querySelector('.delete-decision').addEventListener('click', async () => {
+            const confirmed = window.confirm('Delete this decision?');
+            if (!confirmed) return;
+
+            const { error: deleteError } = await supabaseClient.from('civic_decisions').delete().eq('id', decision.id);
+            if (deleteError) {
+              showToolStatus(decisionsStatusEl, `Could not delete decision: ${deleteError.message}`, true);
+              return;
+            }
+
+            showToolStatus(decisionsStatusEl, 'Decision deleted.');
+            await loadDecisions();
+            if (Number(document.getElementById('decision-id').value) === decision.id) {
+              resetDecisionForm();
+            }
+          });
+
+          decisionsListEl.appendChild(row);
+        });
+      }
+
+      decisionForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!supabaseClient) {
+          showToolStatus(decisionsStatusEl, 'Supabase config is missing. Add keys first.', true);
+          return;
+        }
+
+        const id = document.getElementById('decision-id').value;
+        const payload = {
+          slug: document.getElementById('decision-slug').value.trim(),
+          date: document.getElementById('decision-date').value,
+          title: document.getElementById('decision-title').value.trim(),
+          description: document.getElementById('decision-description').value.trim(),
+          tags: parseTags(document.getElementById('decision-tags').value),
+          source_link: document.getElementById('decision-source-link').value.trim() || null
+        };
+
+        if (!payload.slug || !payload.date || !payload.title || !payload.description) {
+          showToolStatus(decisionsStatusEl, 'Slug, date, title, and description are required.', true);
+          return;
+        }
+
+        if (id) {
+          const { error } = await supabaseClient.from('civic_decisions').update(payload).eq('id', Number(id));
+          if (error) {
+            showToolStatus(decisionsStatusEl, `Could not update decision: ${error.message}`, true);
+            return;
+          }
+          showToolStatus(decisionsStatusEl, 'Decision updated.');
+        } else {
+          const { error } = await supabaseClient.from('civic_decisions').insert(payload);
+          if (error) {
+            showToolStatus(decisionsStatusEl, `Could not create decision: ${error.message}`, true);
+            return;
+          }
+          showToolStatus(decisionsStatusEl, 'Decision created.');
+        }
+
+        resetDecisionForm();
+        await loadDecisions();
+      });
+
+      decisionResetBtn.addEventListener('click', resetDecisionForm);
 
       async function checkPassword(inputPassword) {
         if (!supabaseClient) {
@@ -132,8 +593,11 @@
         showMessage('Access granted.');
         loginSection.classList.add('hidden');
         contentSection.classList.remove('hidden');
-        await loadPlaceholderContent();
+        await loadVoiceQuestions();
+        await loadDecisions();
       });
+
+      attachToolToggles();
     </script>
   </body>
 </html>
