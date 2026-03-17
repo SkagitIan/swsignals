@@ -4,9 +4,15 @@
     <loc>https://sedrowoolley.us/</loc>
   </url>
   <url>
-    <loc>https://sedrowoolley.us/voice.html</loc>
+    <loc>https://sedrowoolley.us/voice/</loc>
   </url>
   <url>
     <loc>https://sedrowoolley.us/decisions/</loc>
+  </url>
+  <url>
+    <loc>https://sedrowoolley.us/maps/</loc>
+  </url>
+  <url>
+    <loc>https://sedrowoolley.us/dashboard/</loc>
   </url>
 </urlset>
