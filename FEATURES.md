@@ -2,6 +2,11 @@
 
 This file tracks user-facing features and feature-level changes.
 
+## 12) Public navigation/footer + dashboard access page
+- **Current behavior:** Public pages now link to Voice, Decisions, and Dashboard in navigation (Agenda removed), each public page includes a government non-affiliation footer note, and a new password-protected `/dashboard/` page checks a Supabase-stored password before showing placeholder Supabase content.
+- **Last updated:** 2026-03-17
+- **Change note:** Added clearer cross-page navigation, legal clarity in page footers, SEO subheadings for Recent Voice/Decisions, and an initial Supabase-backed dashboard gate for private admin content.
+
 ## 11) Shared branding image in header + hero
 - **Current behavior:** The home page now uses a shared Cloudinary image as a round logo in the header navigation and as a featured visual in the hero section.
 - **Last updated:** 2026-03-17
