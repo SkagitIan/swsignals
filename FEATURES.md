@@ -2,6 +2,11 @@
 
 This file tracks user-facing features and feature-level changes.
 
+## 15) Dashboard Supabase self-configuration
+- **Current behavior:** The `/dashboard/` page now includes a Supabase connection panel where admins can save/clear the project URL and anon key in browser local storage, and Voice/Decisions tools immediately load existing records once configured.
+- **Last updated:** 2026-03-17
+- **Change note:** Added a simple in-page setup flow so dashboard tools work without hardcoded global keys and so users can quickly resolve the “Supabase config is missing” warning.
+
 ## 14) Decisions timeline card polish (dot alignment + icon action)
 - **Current behavior:** On `/decisions/`, timeline dots now line up with the vertical rail like home, the extra helper sentence under the page title is removed, and each card shows an icon-only open-details button inline before the tags.
 - **Last updated:** 2026-03-17
