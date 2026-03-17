@@ -17,6 +17,8 @@ const supabaseClient =
     ? window.supabase.createClient(supabaseConfig.url, supabaseConfig.anonKey)
     : null;
 
+const subscriptionTable = window.SUPABASE_SUBSCRIBERS_TABLE || 'notification_signups';
+
 const recentVoiceData = [
   {
     question: 'Should downtown parking include a 2-hour turnover zone near small businesses?',
@@ -35,6 +37,18 @@ const recentVoiceData = [
     yes: 71,
     maybe: 18,
     no: 11
+  },
+  {
+    question: 'Should the city create more shaded waiting areas at high-use bus stops?',
+    yes: 54,
+    maybe: 34,
+    no: 12
+  },
+  {
+    question: 'Would you support opening city hall one evening per month for public services?',
+    yes: 49,
+    maybe: 33,
+    no: 18
   }
 ];
 
@@ -83,31 +97,101 @@ const mapLayerDefinitions = {
   }
 };
 
+let recentVoiceCharts = [];
+
+function getVisibleRecentVoiceData() {
+  return window.matchMedia('(max-width: 639px)').matches ? recentVoiceData.slice(0, 4) : recentVoiceData;
+}
+
 function renderRecentVoice() {
   const list = document.getElementById('recent-voice-list');
   if (!list) return;
 
-  list.innerHTML = recentVoiceData
+  const visibleItems = getVisibleRecentVoiceData();
+
+  list.innerHTML = visibleItems
     .map((item, index) => {
       return `
-        <article class="reveal voice-card rounded-2xl border border-charcoal/10 bg-white/70 p-6 sm:p-7" style="transition-delay:${index * 80}ms;">
-          <h3 class="text-lg font-semibold tracking-tight">${item.question}</h3>
-          <div class="mt-5 h-3 w-full overflow-hidden rounded-full bg-sand/70" role="img" aria-label="Survey result distribution">
-            <div class="result-bar flex h-full w-full rounded-full overflow-hidden">
-              <span class="result-segment" data-width="${item.yes}" style="width:0%;background:${palette.teal}"></span>
-              <span class="result-segment" data-width="${item.maybe}" style="width:0%;background:#6DA2A2"></span>
-              <span class="result-segment" data-width="${item.no}" style="width:0%;background:#A7B2B0"></span>
-            </div>
-          </div>
-          <div class="mt-4 grid grid-cols-3 gap-2 text-sm text-slate">
-            <p><span class="font-semibold text-charcoal">${item.yes}%</span> Yes</p>
-            <p><span class="font-semibold text-charcoal">${item.maybe}%</span> Maybe</p>
-            <p><span class="font-semibold text-charcoal">${item.no}%</span> No</p>
+        <article class="reveal voice-card rounded-2xl border border-charcoal/10 bg-white/70 p-4 sm:p-5" style="transition-delay:${index * 70}ms;">
+          <h3 class="text-base font-semibold leading-tight tracking-tight" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${item.question}</h3>
+          <div class="mt-4 flex items-center justify-center">
+            <canvas class="recent-voice-pie" width="150" height="150" data-yes="${item.yes}" data-maybe="${item.maybe}" data-no="${item.no}" aria-label="Survey result distribution pie chart"></canvas>
           </div>
         </article>
       `;
     })
     .join('');
+}
+
+function destroyRecentVoiceCharts() {
+  recentVoiceCharts.forEach((chart) => chart.destroy());
+  recentVoiceCharts = [];
+}
+
+function buildRecentVoiceCharts() {
+  const canvases = document.querySelectorAll('.recent-voice-pie');
+  if (!canvases.length || !window.Chart) return;
+
+  destroyRecentVoiceCharts();
+
+  const piePercentPlugin = {
+    id: 'piePercentPlugin',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      const meta = chart.getDatasetMeta(0);
+      const labels = ['Yes', 'Maybe', 'No'];
+
+      meta.data.forEach((arc, index) => {
+        const value = chart.data.datasets[0].data[index];
+        const position = arc.tooltipPosition();
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = index === 2 ? '#1F2A2E' : '#FFFFFF';
+        ctx.font = '600 12px Inter, system-ui, sans-serif';
+        ctx.fillText(`${value}%`, position.x, position.y - 7);
+        ctx.font = '500 10px Inter, system-ui, sans-serif';
+        ctx.fillText(labels[index], position.x, position.y + 8);
+        ctx.restore();
+      });
+    }
+  };
+
+  canvases.forEach((canvas) => {
+    const data = [Number(canvas.dataset.yes), Number(canvas.dataset.maybe), Number(canvas.dataset.no)];
+
+    recentVoiceCharts.push(
+      new Chart(canvas, {
+        type: 'pie',
+        data: {
+          labels: ['Yes', 'Maybe', 'No'],
+          datasets: [
+            {
+              data,
+              backgroundColor: [palette.teal, '#6DA2A2', '#A7B2B0'],
+              borderColor: '#ffffff',
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: false,
+          animation: { duration: 900 },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label(context) {
+                  return `${context.label}: ${context.parsed}%`;
+                }
+              }
+            }
+          }
+        },
+        plugins: [piePercentPlugin]
+      })
+    );
+  });
 }
 
 function renderDecisions() {
@@ -197,8 +281,7 @@ function initMap() {
 
 function setupVoiceSurvey() {
   const form = document.getElementById('voice-form');
-  const message = document.getElementById('voice-message');
-  if (!form || !message) return;
+  if (!form) return;
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -227,35 +310,90 @@ function setupVoiceSurvey() {
   });
 }
 
+function setupVoiceSubscribe() {
+  const toggle = document.getElementById('subscribe-toggle');
+  const form = document.getElementById('voice-subscribe-form');
+  const method = document.getElementById('subscribe-method');
+  const contact = document.getElementById('subscribe-contact');
+  const message = document.getElementById('subscribe-message');
+  if (!toggle || !form || !method || !contact || !message) return;
+
+  const updatePlaceholder = () => {
+    contact.placeholder = method.value === 'sms' ? '3605551234' : 'name@email.com';
+  };
+
+  toggle.addEventListener('click', () => {
+    form.classList.toggle('hidden');
+    if (!form.classList.contains('hidden')) contact.focus();
+  });
+
+  method.addEventListener('change', updatePlaceholder);
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const value = contact.value.trim();
+
+    if (!value) {
+      showPanelMessage(message, 'Please enter an email or phone number.', false);
+      return;
+    }
+
+    if (method.value === 'email' && !/^\S+@\S+\.\S+$/.test(value)) {
+      showPanelMessage(message, 'Please enter a valid email address.', false);
+      return;
+    }
+
+    if (method.value === 'sms' && value.replace(/\D/g, '').length < 10) {
+      showPanelMessage(message, 'Please enter a valid SMS number with at least 10 digits.', false);
+      return;
+    }
+
+    const payload = {
+      contact_method: method.value,
+      contact_value: value,
+      created_at: new Date().toISOString()
+    };
+
+    if (!supabaseClient) {
+      showPanelMessage(message, 'Subscription saved locally. Add Supabase keys to enable live syncing.', false);
+      return;
+    }
+
+    const { error } = await supabaseClient.from(subscriptionTable).insert(payload);
+
+    if (error) {
+      showPanelMessage(message, 'Subscription could not be saved right now. Please try again shortly.', false);
+      return;
+    }
+
+    showPanelMessage(message, 'You are subscribed. We will send your next weekly reminder.', true);
+    form.reset();
+    updatePlaceholder();
+  });
+
+  updatePlaceholder();
+}
+
 function showVoiceMessage(text, isSuccess) {
   const message = document.getElementById('voice-message');
   if (!message) return;
-  message.textContent = text;
-  message.classList.remove('hidden');
-  message.classList.toggle('border-teal/20', isSuccess);
-  message.classList.toggle('bg-mist', isSuccess);
-  message.classList.toggle('border-amber-300/50', !isSuccess);
-  message.classList.toggle('bg-amber-100/70', !isSuccess);
+  showPanelMessage(message, text, isSuccess);
+}
+
+function showPanelMessage(messageElement, text, isSuccess) {
+  messageElement.textContent = text;
+  messageElement.classList.remove('hidden');
+  messageElement.classList.toggle('border-teal/20', isSuccess);
+  messageElement.classList.toggle('bg-mist', isSuccess);
+  messageElement.classList.toggle('border-amber-300/50', !isSuccess);
+  messageElement.classList.toggle('bg-amber-100/70', !isSuccess);
 
   anime({
-    targets: '#voice-message',
+    targets: messageElement,
     opacity: [0, 1],
     translateY: [8, 0],
     duration: 360,
     easing: 'easeOutQuad'
-  });
-}
-
-function animateResultBars() {
-  const segments = document.querySelectorAll('.result-segment');
-  segments.forEach((segment, index) => {
-    anime({
-      targets: segment,
-      width: `${segment.dataset.width}%`,
-      delay: 180 + index * 60,
-      duration: 1000,
-      easing: 'easeOutCubic'
-    });
   });
 }
 
@@ -322,15 +460,30 @@ function animateCTA() {
   });
 }
 
+function setupRecentVoiceResponsiveRender() {
+  let previousSmall = window.matchMedia('(max-width: 639px)').matches;
+
+  window.addEventListener('resize', () => {
+    const nextSmall = window.matchMedia('(max-width: 639px)').matches;
+    if (nextSmall === previousSmall) return;
+
+    previousSmall = nextSmall;
+    renderRecentVoice();
+    buildRecentVoiceCharts();
+  });
+}
+
 function init() {
   renderRecentVoice();
+  buildRecentVoiceCharts();
   renderDecisions();
   initMap();
   setupVoiceSurvey();
+  setupVoiceSubscribe();
   setupHoverPolish();
   setupRevealAnimations();
   animateCTA();
-  animateResultBars();
+  setupRecentVoiceResponsiveRender();
 }
 
 document.addEventListener('DOMContentLoaded', init);
