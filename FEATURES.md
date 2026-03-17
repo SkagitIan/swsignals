@@ -3,9 +3,9 @@
 This file tracks user-facing features and feature-level changes.
 
 ## 13) Clean page URLs + maps hub + dashboard gate messaging
-- **Current behavior:** Site navigation now uses extensionless routes (`/voice/`, `/decisions/`, `/maps/`, `/dashboard/`), a new `/maps/` page exists as the central map hub, the old `voice.html` path redirects to `/voice/`, timeline dots on Decisions are aligned to the timeline, and dashboard login now reports setup/query issues separately from true password mismatches.
+- **Current behavior:** Site navigation now uses extensionless routes (`/voice/`, `/decisions/`, `/maps/`, `/dashboard/`), a new `/maps/` page exists as the central map hub, the old `voice.html` path redirects to `/voice/`, timeline dots on Decisions are aligned to the timeline, and dashboard login works even when Supabase config is unavailable by falling back to the local dashboard password.
 - **Last updated:** 2026-03-17
-- **Change note:** Added a stable URL structure and maps landing page for cleaner navigation, fixed a visible Decisions timeline alignment bug, and made dashboard password troubleshooting clearer so valid passwords are not masked by setup errors.
+- **Change note:** Added a stable URL structure and maps landing page for cleaner navigation, fixed a visible Decisions timeline alignment bug, and added a simple local password fallback so dashboard access does not break when Supabase env vars are missing.
 
 ## 12) Public navigation/footer + dashboard access page
 - **Current behavior:** Public pages now link to Voice, Decisions, and Dashboard in navigation (Agenda removed), each public page includes a government non-affiliation footer note, and a new password-protected `/dashboard/` page checks a Supabase-stored password before showing placeholder Supabase content.
