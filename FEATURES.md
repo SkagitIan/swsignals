@@ -3,9 +3,9 @@
 This file tracks user-facing features and feature-level changes.
 
 ## 1) Weekly civic question + voting
-- **Current behavior:** Users can view a question, choose one answer, optionally leave a comment, and submit.
+- **Current behavior:** Users now load the weekly question and answer choices from Supabase, choose one answer, and submit.
 - **Last updated:** 2026-03-17
-- **Change note:** Initial feature baseline documented.
+- **Change note:** Wired question prompt and answer options to Supabase so weekly updates can be managed from data instead of hardcoded HTML.
 
 ## 2) Question navigation + response state
 - **Current behavior:** Users can move between available questions and see a thank-you state after submitting.
@@ -13,9 +13,9 @@ This file tracks user-facing features and feature-level changes.
 - **Change note:** Initial feature baseline documented.
 
 ## 3) Results visualization (Chart.js)
-- **Current behavior:** After submit, a pie chart shows answer distribution percentages and vote counts.
+- **Current behavior:** Recent Voice cards read question/response totals from Supabase and render pie-chart percentages from live response data.
 - **Last updated:** 2026-03-17
-- **Change note:** Initial feature baseline documented.
+- **Change note:** Replaced static result percentages with Supabase-driven aggregation to reflect current response distribution.
 
 ## 4) Topic preferences
 - **Current behavior:** Users can select topics they care about; selections save automatically.

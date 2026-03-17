@@ -18,8 +18,17 @@ const supabaseClient =
     : null;
 
 const subscriptionTable = window.SUPABASE_SUBSCRIBERS_TABLE || 'notification_signups';
+const questionsTable = window.SUPABASE_QUESTIONS_TABLE || 'weekly_voice_questions';
+const responsesTable = window.SUPABASE_RESPONSES_TABLE || 'weekly_voice_responses';
 
-const recentVoiceData = [
+const fallbackVoiceQuestion = {
+  id: null,
+  weekLabel: 'Week of May 6',
+  question: 'Should the city prioritize protected bike connections between schools and downtown?',
+  answers: ['Yes', 'Maybe / Needs more detail', 'No']
+};
+
+const fallbackRecentVoiceData = [
   {
     question: 'Should downtown parking include a 2-hour turnover zone near small businesses?',
     yes: 63,
@@ -98,6 +107,8 @@ const mapLayerDefinitions = {
 };
 
 let recentVoiceCharts = [];
+let recentVoiceData = [...fallbackRecentVoiceData];
+let activeVoiceQuestion = { ...fallbackVoiceQuestion };
 
 function getVisibleRecentVoiceData() {
   return window.matchMedia('(max-width: 639px)').matches ? recentVoiceData.slice(0, 4) : recentVoiceData;
@@ -121,6 +132,90 @@ function renderRecentVoice() {
       `;
     })
     .join('');
+}
+
+function renderVoiceQuestion() {
+  const weekEl = document.getElementById('voice-week-label');
+  const questionEl = document.getElementById('voice-question-text');
+  const optionsEl = document.getElementById('voice-options');
+
+  if (weekEl) weekEl.textContent = activeVoiceQuestion.weekLabel;
+  if (questionEl) questionEl.textContent = activeVoiceQuestion.question;
+  if (!optionsEl) return;
+
+  optionsEl.innerHTML = activeVoiceQuestion.answers
+    .map(
+      (answer) => `
+      <label class="option-row flex cursor-pointer items-center justify-between rounded-2xl border border-charcoal/15 bg-cream px-4 py-3 transition hover:border-teal/50">
+        <span class="font-medium">${answer}</span>
+        <input type="radio" name="voice" value="${answer}" class="h-4 w-4 accent-teal" />
+      </label>
+    `
+    )
+    .join('');
+}
+
+async function loadVoiceFromSupabase() {
+  if (!supabaseClient) return;
+
+  const { data: questions, error: questionsError } = await supabaseClient
+    .from(questionsTable)
+    .select('id,week_label,question,answers,created_at')
+    .order('created_at', { ascending: false })
+    .limit(8);
+
+  if (questionsError || !questions || !questions.length) return;
+
+  const [latestQuestion] = questions;
+  const parsedAnswers = Array.isArray(latestQuestion.answers) && latestQuestion.answers.length >= 2 ? latestQuestion.answers.slice(0, 3) : fallbackVoiceQuestion.answers;
+
+  activeVoiceQuestion = {
+    id: latestQuestion.id,
+    weekLabel: latestQuestion.week_label || fallbackVoiceQuestion.weekLabel,
+    question: latestQuestion.question || fallbackVoiceQuestion.question,
+    answers: parsedAnswers
+  };
+
+  const questionIds = questions.map((item) => item.id);
+  const { data: responses, error: responsesError } = await supabaseClient
+    .from(responsesTable)
+    .select('question_id,response')
+    .in('question_id', questionIds);
+
+  if (responsesError || !responses) return;
+
+  const responseCountsByQuestion = responses.reduce((acc, row) => {
+    const key = row.question_id;
+    if (!acc[key]) {
+      acc[key] = {};
+    }
+    const current = acc[key][row.response] || 0;
+    acc[key][row.response] = current + 1;
+    return acc;
+  }, {});
+
+  recentVoiceData = questions.map((item) => {
+    const answers = Array.isArray(item.answers) && item.answers.length >= 3 ? item.answers.slice(0, 3) : fallbackVoiceQuestion.answers;
+    const counts = responseCountsByQuestion[item.id] || {};
+    const values = answers.map((answer) => counts[answer] || 0);
+    const total = values.reduce((sum, value) => sum + value, 0);
+
+    if (!total) {
+      return {
+        question: item.question,
+        yes: 0,
+        maybe: 0,
+        no: 0
+      };
+    }
+
+    return {
+      question: item.question,
+      yes: Math.round((values[0] / total) * 100),
+      maybe: Math.round((values[1] / total) * 100),
+      no: Math.round((values[2] / total) * 100)
+    };
+  });
 }
 
 function destroyRecentVoiceCharts() {
@@ -297,8 +392,12 @@ function setupVoiceSurvey() {
       submitted_at: new Date().toISOString()
     };
 
+    if (activeVoiceQuestion.id) {
+      payload.question_id = activeVoiceQuestion.id;
+    }
+
     if (supabaseClient) {
-      const { error } = await supabaseClient.from('weekly_voice_responses').insert(payload);
+      const { error } = await supabaseClient.from(responsesTable).insert(payload);
       if (error) {
         showVoiceMessage('Saved locally for now. Live response sync is temporarily unavailable.', false);
         return;
@@ -473,7 +572,9 @@ function setupRecentVoiceResponsiveRender() {
   });
 }
 
-function init() {
+async function init() {
+  await loadVoiceFromSupabase();
+  renderVoiceQuestion();
   renderRecentVoice();
   buildRecentVoiceCharts();
   renderDecisions();
