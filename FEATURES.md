@@ -2,6 +2,11 @@
 
 This file tracks user-facing features and feature-level changes.
 
+## 11) Shared branding image in header + hero
+- **Current behavior:** The home page now uses a shared Cloudinary image as a round logo in the header navigation and as a featured visual in the hero section.
+- **Last updated:** 2026-03-17
+- **Change note:** Added the same brand image in both top-of-page locations so site identity is consistent and more visually prominent.
+
 ## 10) Crawl indexing defaults (robots + sitemap)
 - **Current behavior:** Search crawlers are allowed across the site, and a sitemap is published at the root listing the home and Voice pages on the production domain.
 - **Last updated:** 2026-03-17
