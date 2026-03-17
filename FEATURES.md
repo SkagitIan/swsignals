@@ -2,10 +2,10 @@
 
 This file tracks user-facing features and feature-level changes.
 
-## 14) Dashboard tool panels for Voice and Decisions management
-- **Current behavior:** The `/dashboard/` page now unlocks a single admin page with collapsed tool panels for managing Voice questions/answers and civic decisions directly in Supabase (create, edit, delete), and includes setup SQL for a new `vendor_credentials` table for future API key storage.
+## 14) Decisions timeline card polish (dot alignment + icon action)
+- **Current behavior:** On `/decisions/`, timeline dots now line up with the vertical rail like home, the extra helper sentence under the page title is removed, and each card shows an icon-only open-details button inline before the tags.
 - **Last updated:** 2026-03-17
-- **Change note:** Replaced the old placeholder dashboard content area with compact, click-to-open management tools so content updates can be done from one page without adding backend server code.
+- **Change note:** Matched the timeline marker positioning to the proven home layout and simplified card actions/heading copy for a cleaner scan.
 
 ## 13) Clean page URLs + maps hub + dashboard gate messaging
 - **Current behavior:** Site navigation now uses extensionless routes (`/voice/`, `/decisions/`, `/maps/`, `/dashboard/`), a new `/maps/` page exists as the central map hub, the old `voice.html` path redirects to `/voice/`, timeline dots on Decisions are aligned to the timeline, and dashboard login works even when Supabase config is unavailable by falling back to the local dashboard password.
