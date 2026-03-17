@@ -14,6 +14,17 @@ create table if not exists public.dashboard_content (
   updated_at timestamptz not null default now()
 );
 
+-- Vendor credentials table for future API integrations
+create table if not exists public.vendor_credentials (
+  id bigint generated always as identity primary key,
+  vendor_name text not null unique,
+  api_key text not null,
+  notes text,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 insert into public.dashboard_passwords (password, is_active)
 select 'grandson2025', true
 where not exists (
