@@ -52,3 +52,7 @@ This file tracks user-facing features and feature-level changes.
 - **Last updated:** 2026-03-17
 - **Change note:** Added inline subscription capture so users can opt into weekly reminders without leaving the Voice page.
 
+## 10) Structured data (JSON-LD) for search engines
+- **Current behavior:** Home and Voice pages now include JSON-LD with shared WebSite/Organization entities; Voice includes FAQPage markup for the weekly question block; Home includes Event markup for listed meeting/decision items.
+- **Last updated:** 2026-03-17
+- **Change note:** Added stable production `@id` references and page-matching schema fields to strengthen rich results while keeping structured data aligned with visible content.
