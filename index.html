@@ -1,1030 +1,170 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sedro Listens</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <style>
-    :root {
-      --bg1: #f8fafc;
-      --bg2: #eef2ff;
-      --card: rgba(255,255,255,.72);
-      --stroke: rgba(15,23,42,.10);
-      --text: #0f172a;
-      --muted: #475569;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at 20% 20%, rgba(56,189,248,.10), transparent 26%),
-        radial-gradient(circle at 80% 20%, rgba(167,139,250,.10), transparent 24%),
-        radial-gradient(circle at 50% 80%, rgba(34,197,94,.08), transparent 26%),
-        linear-gradient(135deg, var(--bg1), var(--bg2));
-      overflow-x: hidden;
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      opacity: .08;
-      background-image:
-        linear-gradient(rgba(15,23,42,.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(15,23,42,.05) 1px, transparent 1px);
-      background-size: 24px 24px, 24px 24px;
-      mask-image: radial-gradient(circle at center, black 55%, transparent 100%);
-    }
-
-    body::after {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      opacity: .05;
-      background-image: radial-gradient(rgba(15,23,42,.45) .7px, transparent .7px);
-      background-size: 14px 14px;
-    }
-
-    .glass {
-      background: var(--card);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border: 1px solid var(--stroke);
-      box-shadow: 0 20px 60px rgba(15,23,42,.10), inset 0 1px 0 rgba(255,255,255,.7);
-    }
-
-    .float-blob {
-      position: fixed;
-      border-radius: 9999px;
-      filter: blur(24px);
-      opacity: .35;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .choice, .topic-btn {
-      transition: transform .18s ease, border-color .18s ease, background .18s ease;
-    }
-
-    .choice:hover, .topic-btn:hover {
-      transform: translateY(-2px);
-    }
-
-    .choice {
-      border: 1px solid rgba(15,23,42,.08);
-      background: rgba(255,255,255,.55);
-    }
-
-    .choice:hover {
-      border-color: rgba(56,189,248,.35);
-      background: rgba(255,255,255,.8);
-    }
-
-    .topic-btn {
-      border: 1px solid rgba(15,23,42,.08);
-      background: rgba(255,255,255,.55);
-      color: #0f172a;
-    }
-
-    .topics-panel {
-      background: linear-gradient(135deg, rgba(14,165,233,.14), rgba(99,102,241,.12), rgba(34,197,94,.12));
-      border: 1px solid rgba(14,165,233,.25);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
-    }
-
-    .topic-btn.active {
-      background: linear-gradient(135deg, rgba(34,197,94,.16), rgba(56,189,248,.16));
-      border-color: rgba(56,189,248,.35);
-    }
-
-    .notify-modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, .45);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 40;
-      padding: 1rem;
-    }
-
-    .notify-modal.open { display: flex; }
-
-    .mini-bar {
-      height: 6px;
-      border-radius: 9999px;
-      background: linear-gradient(90deg, rgba(56,189,248,.35), rgba(99,102,241,.55));
-      overflow: hidden;
-    }
-
-    .mini-bar > span {
-      display: block;
-      height: 100%;
-      background: linear-gradient(90deg, #22c55e, #0ea5e9);
-    }
-
-    .history-card {
-      border: 1px solid rgba(15,23,42,.12);
-      border-radius: 14px;
-      background: #fff;
-      box-shadow: 0 8px 22px rgba(15,23,42,.08);
-      padding: 10px 12px;
-    }
-
-    .tiny {
-      font-size: .82rem;
-      color: var(--muted);
-    }
-
-    .hero-line {
-      font-weight: 900;
-      letter-spacing: -0.02em;
-      color: #0f172a;
-      min-height: 1.15em;
-    }
-
-    .hero-pop {
-      color: #7c3aed;
-      text-shadow: 0 6px 14px rgba(124, 58, 237, .2);
-    }
-
-    .tally-wrap {
-      margin-top: 1rem;
-      padding: .75rem;
-      border: 1px solid rgba(16, 185, 129, .25);
-      border-radius: 1rem;
-      background: rgba(255, 255, 255, .55);
-      overflow: hidden;
-    }
-
-    .tally-canvas {
-      width: min(100%, 420px);
-      margin: 0 auto;
-      display: block;
-      aspect-ratio: 1 / 1;
-      max-height: 320px;
-    }
-
-    .tally-loading {
-      margin-top: .75rem;
-      color: #047857;
-      font-size: .85rem;
-    }
-
-    @media (max-width: 640px) {
-      .float-blob { opacity: .24; filter: blur(20px); }
-      .tally-wrap { padding: .5rem; }
-    }
-  </style>
-</head>
-<body>
-  <div id="blob1" class="float-blob w-40 h-40 sm:w-48 sm:h-48 bg-sky-400/30 top-10 left-4 sm:left-8"></div>
-  <div id="blob2" class="float-blob w-44 h-44 sm:w-56 sm:h-56 bg-violet-400/30 top-24 sm:top-32 right-4 sm:right-8"></div>
-  <div id="blob3" class="float-blob w-36 h-36 sm:w-40 sm:h-40 bg-green-400/30 bottom-8 left-1/3"></div>
-
-  <main class="relative z-10 min-h-screen px-3 py-6 sm:px-4 sm:py-10 md:py-16">
-    <div class="mx-auto w-full max-w-3xl">
-      <div class="mb-5 text-center">
-        <h1 class="mt-3 text-3xl sm:text-4xl md:text-5xl" aria-label="One question once a week. Your voice once a week.">
-          <span class="hero-line" id="heroLine">
-            <span id="heroWordOne">One</span>
-            <span class="hero-pop" id="heroWordTwo">question</span>
-            <span id="heroWordTail">once a week.</span>
-          </span>
-        </h1>
-        <p class="mt-3 text-slate-700 max-w-2xl mx-auto">
-          Quick civic input from real residents. Vote, add a thought, pick topics you care about.
-        </p>
-      </div>
-
-      <div class="mb-4 flex justify-center">
-        <button id="notifyToggle" type="button" class="glass rounded-full px-4 py-2 text-sm font-semibold text-slate-800 border border-slate-300 hover:translate-y-[-1px] transition">
-          🔔 Notify me
-        </button>
-      </div>
-
-      <section class="glass rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-5 md:p-7">
-        <div id="questionBlock">
-        <div class="flex items-center justify-end gap-2">
-          <button id="prevQuestionBtn" type="button" aria-label="Previous question" class="h-9 w-9 rounded-full border border-sky-200 bg-sky-50/80 text-base text-sky-500 transition hover:bg-sky-100 disabled:opacity-35 disabled:cursor-not-allowed">←</button>
-          <button id="nextQuestionBtn" type="button" aria-label="Next question" class="h-9 w-9 rounded-full border border-violet-200 bg-violet-50/80 text-base text-violet-500 transition hover:bg-violet-100 disabled:opacity-35 disabled:cursor-not-allowed">→</button>
-        </div>
-
-        <div class="mt-3">
-          <h2 id="questionText" class="text-2xl md:text-3xl font-bold leading-tight text-slate-900">
-            Loading question...
-          </h2>
-        </div>
-        </div>
-
-        <div id="thankYouState" class="hidden rounded-2xl border border-emerald-200 bg-emerald-50/80 p-5 text-center">
-          <div class="text-4xl">✅</div>
-          <h2 class="mt-2 text-2xl font-bold text-emerald-800">Thank you!</h2>
-          <p class="mt-1 text-sm text-emerald-700">Your response was saved and helps shape future weekly questions.</p>
-
-          <div class="tally-wrap">
-            <div id="tallyLoading" class="tally-loading">Loading chart…</div>
-            <canvas id="tallyChart" class="tally-canvas hidden" aria-label="Current answer percentages"></canvas>
-          </div>
-        </div>
-
-        <form id="voteForm" class="mt-6 space-y-5">
-          <div id="choicesWrap" class="space-y-3"></div>
-
-          <div>
-            <label for="comment" class="block mb-2 text-sm text-slate-700">
-              Anything else?
-            </label>
-            <textarea
-              id="comment"
-              rows="4"
-              maxlength="500"
-              placeholder="Optional comment..."
-              class="w-full rounded-2xl border border-slate-300 bg-white/80 px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none focus:border-sky-400"
-            ></textarea>
-          </div>
-
-          <button
-            id="submitBtn"
-            type="submit"
-            class="w-full sm:w-auto rounded-2xl px-6 py-3 font-semibold text-slate-950 bg-white border border-slate-300 hover:translate-y-[-1px] transition"
-          >
-            Submit
-          </button>
-
-          <p id="submitMsg" class="tiny min-h-[1.25rem]"></p>
-        </form>
-
-        <div class="topics-panel mt-8 rounded-2xl p-4 sm:p-5">
-          <div class="flex items-center justify-between gap-3 flex-wrap">
-            <div>
-              <h3 class="text-lg font-semibold text-slate-900">Topics you care about</h3>
-              <p class="tiny">Tap any topic. It saves automatically.</p>
-            </div>
-            <p id="topicMsg" class="tiny"></p>
-          </div>
-
-          <div id="topicsWrap" class="mt-4 flex flex-wrap gap-2"></div>
-        </div>
-      </section>
-
-      <section class="mt-5">
-        <div id="historyWrap" class="space-y-4"></div>
-      </section>
-
-      <p class="mt-6 text-center tiny max-w-2xl mx-auto">
-        This is an independent public feedback project. It is not a city-run platform, not an official vote,
-        and not a substitute for elections, public hearings, or council process.
-      </p>
-    </div>
-  </main>
-
-  <div id="notifyModal" class="notify-modal" aria-hidden="true">
-    <div class="glass w-full max-w-md rounded-3xl p-5">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <h3 class="text-xl font-bold text-slate-900">Get weekly reminders</h3>
-          <p class="tiny mt-1">Choose email or SMS so you do not miss new questions.</p>
-        </div>
-        <button id="notifyClose" type="button" class="rounded-full px-2 py-1 text-slate-600 hover:bg-slate-100">✕</button>
-      </div>
-
-      <form id="notifyForm" class="mt-4 space-y-3">
-        <div class="grid grid-cols-2 gap-2">
-          <button type="button" data-channel="email" class="notify-channel rounded-xl border border-slate-300 bg-white/70 px-3 py-2 text-sm font-medium">Email</button>
-          <button type="button" data-channel="sms" class="notify-channel rounded-xl border border-slate-300 bg-white/70 px-3 py-2 text-sm font-medium">SMS</button>
-        </div>
-
-        <input id="notifyInput" required type="text" placeholder="name@email.com or 5551234567" class="w-full rounded-xl border border-slate-300 bg-white/80 px-3 py-2 outline-none focus:border-sky-400" />
-        <button type="submit" class="w-full rounded-xl bg-slate-900 px-4 py-2 font-semibold text-white">Save notification</button>
-        <p id="notifyMsg" class="tiny min-h-[1.25rem]"></p>
-      </form>
-    </div>
-  </div>
-
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-    import { animate, stagger } from "https://cdn.jsdelivr.net/npm/animejs/+esm";
-    import Chart from "https://cdn.jsdelivr.net/npm/chart.js@4.4.3/auto/+esm";
-
-    const SUPABASE_URL = "https://pwpxefyzsngnrjqvutil.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_skqKhrUPn68yF_LpRCk1Gg_Z4Iu8CXD";
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    const TOPICS = [
-      "Public Safety", "Parks", "Roads", "Downtown", "Housing",
-      "Budget", "Youth", "Business", "Events", "Trails"
-    ];
-
-    const SESSION_KEY = "sedro_listens_session_id";
-    const USER_KEY = "sedro_listens_user_id";
-    const TOPICS_KEY = "sedro_listens_topics";
-    const RESPONDED_KEY = "sedro_listens_responded_questions";
-
-    let currentQuestion = null;
-    let currentChoices = [];
-    let savedResponseId = null;
-    let notifyChannel = "email";
-    let questionTimeline = [];
-    let questionIndex = 0;
-    let tallyChart = null;
-    const PIE_COLORS = ["#22c55e", "#0ea5e9", "#8b5cf6", "#f59e0b", "#ef4444", "#14b8a6"];
-
-    const HISTORY_ITEMS = [
-      {
-        question: "Should downtown have one monthly car-free evening in summer?",
-        results: [
-          { label: "Yes", percent: 63, barClass: "bg-emerald-500", textClass: "text-emerald-600" },
-          { label: "Maybe", percent: 27, barClass: "bg-sky-400", textClass: "text-sky-600" },
-          { label: "No", percent: 10, barClass: "bg-indigo-300", textClass: "text-indigo-500" }
-        ]
-      },
-      {
-        question: "Should city parks stay open until 10 PM on summer weekends?",
-        results: [
-          { label: "Yes", percent: 58, barClass: "bg-emerald-500", textClass: "text-emerald-600" },
-          { label: "Maybe", percent: 30, barClass: "bg-sky-400", textClass: "text-sky-600" },
-          { label: "No", percent: 12, barClass: "bg-indigo-300", textClass: "text-indigo-500" }
-        ]
-      },
-      {
-        question: "Should Main Street add more benches and shaded seating?",
-        results: [
-          { label: "Yes", percent: 71, barClass: "bg-emerald-500", textClass: "text-emerald-600" },
-          { label: "Maybe", percent: 20, barClass: "bg-sky-400", textClass: "text-sky-600" },
-          { label: "No", percent: 9, barClass: "bg-indigo-300", textClass: "text-indigo-500" }
-        ]
-      }
-    ];
-
-    const els = {
-      questionText: document.getElementById("questionText"),
-      statusPill: document.getElementById("statusPill"),
-      prevQuestionBtn: document.getElementById("prevQuestionBtn"),
-      nextQuestionBtn: document.getElementById("nextQuestionBtn"),
-      choicesWrap: document.getElementById("choicesWrap"),
-      voteForm: document.getElementById("voteForm"),
-      submitBtn: document.getElementById("submitBtn"),
-      submitMsg: document.getElementById("submitMsg"),
-      comment: document.getElementById("comment"),
-      topicsWrap: document.getElementById("topicsWrap"),
-      topicMsg: document.getElementById("topicMsg"),
-      questionBlock: document.getElementById("questionBlock"),
-      thankYouState: document.getElementById("thankYouState"),
-      historyWrap: document.getElementById("historyWrap"),
-      notifyToggle: document.getElementById("notifyToggle"),
-      notifyModal: document.getElementById("notifyModal"),
-      notifyClose: document.getElementById("notifyClose"),
-      notifyForm: document.getElementById("notifyForm"),
-      notifyInput: document.getElementById("notifyInput"),
-      notifyMsg: document.getElementById("notifyMsg"),
-      tallyLoading: document.getElementById("tallyLoading"),
-      tallyChart: document.getElementById("tallyChart"),
-    };
-
-    function setCookie(name, value, days = 365) {
-      const maxAge = days * 24 * 60 * 60;
-      document.cookie = `${name}=${value}; path=/; max-age=${maxAge}; samesite=lax`;
-    }
-
-    function getPersistentId(key) {
-      let id = localStorage.getItem(key);
-      if (!id) {
-        id = crypto.randomUUID();
-        localStorage.setItem(key, id);
-      }
-      return id;
-    }
-
-    function getSessionId() {
-      const id = getPersistentId(SESSION_KEY);
-      setCookie(SESSION_KEY, id, 7);
-      return id;
-    }
-
-    function getUserId() {
-      const id = getPersistentId(USER_KEY);
-      setCookie(USER_KEY, id, 365);
-      return id;
-    }
-
-    function getRespondedQuestionIds() {
-      try {
-        return JSON.parse(localStorage.getItem(RESPONDED_KEY) || "[]");
-      } catch {
-        return [];
-      }
-    }
-
-    function markResponded(questionId) {
-      const ids = new Set(getRespondedQuestionIds());
-      ids.add(questionId);
-      localStorage.setItem(RESPONDED_KEY, JSON.stringify([...ids]));
-    }
-
-    function getSavedTopics() {
-      try {
-        return JSON.parse(localStorage.getItem(TOPICS_KEY) || "[]");
-      } catch {
-        return [];
-      }
-    }
-
-    function saveTopicsLocal(topics) {
-      localStorage.setItem(TOPICS_KEY, JSON.stringify(topics));
-    }
-
-    function setStatus(text) {
-      if (els.statusPill) {
-        els.statusPill.textContent = text;
-      }
-    }
-
-    function resetQuestionState() {
-      savedResponseId = null;
-      els.voteForm.reset();
-      els.submitBtn.textContent = "Submit";
-      els.submitBtn.disabled = false;
-      els.submitBtn.classList.remove("opacity-60", "cursor-not-allowed");
-      els.submitMsg.textContent = "";
-      els.questionBlock.classList.remove("hidden");
-      els.voteForm.classList.remove("hidden");
-      els.voteForm.style.display = "";
-      els.thankYouState.classList.add("hidden");
-    }
-
-    function getSelectedChoiceId() {
-      const checked = document.querySelector('input[name="choice"]:checked');
-      return checked ? Number(checked.value) : null;
-    }
-
-    function getActiveTopics() {
-      return [...document.querySelectorAll(".topic-btn.active")].map(btn => btn.dataset.topic);
-    }
-
-    function disableForm(disabled) {
-      els.submitBtn.disabled = disabled;
-      els.submitBtn.classList.toggle("opacity-60", disabled);
-      els.submitBtn.classList.toggle("cursor-not-allowed", disabled);
-    }
-
-    function renderPieChart(items, totalVotes) {
-      if (!items.length) {
-        els.tallyLoading.textContent = "Chart unavailable right now.";
-        return;
-      }
-
-      els.tallyLoading.classList.add("hidden");
-      els.tallyChart.classList.remove("hidden");
-
-      if (tallyChart) {
-        tallyChart.destroy();
-      }
-
-      tallyChart = new Chart(els.tallyChart, {
-        type: "pie",
-        data: {
-          labels: items.map((item) => item.label),
-          datasets: [{
-            data: items.map((item) => item.count),
-            backgroundColor: items.map((item) => item.color),
-            borderColor: "rgba(255,255,255,.8)",
-            borderWidth: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: "bottom"
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SedroWoolley.us | Local civic signal</title>
+    <meta
+      name="description"
+      content="SedroWoolley.us provides plain-English local civic updates, decisions, and maps for the Sedro-Woolley community."
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              cream: '#F7F4EE',
+              charcoal: '#1F2A2E',
+              slate: '#526067',
+              teal: '#1E7A7A',
+              mist: '#DCE9E7',
+              sand: '#E9E1D3'
             },
-            tooltip: {
-              callbacks: {
-                label(context) {
-                  const votes = context.parsed || 0;
-                  const percent = totalVotes ? Math.round((votes / totalVotes) * 100) : 0;
-                  return `${context.label}: ${percent}% (${votes} votes)`;
-                }
-              }
+            boxShadow: {
+              civic: '0 20px 50px -28px rgba(31,42,46,0.4)'
             }
           }
         }
-      });
-    }
-
-    async function showCurrentTally(questionId) {
-      els.tallyLoading.classList.remove("hidden");
-      els.tallyLoading.textContent = "Loading chart…";
-      els.tallyChart.classList.add("hidden");
-
-      const { data, error } = await supabase
-        .from("responses")
-        .select("choice_id")
-        .eq("question_id", questionId);
-
-      if (error || !data || data.length === 0) {
-        els.tallyLoading.textContent = "Chart unavailable right now.";
-        return;
-      }
-
-      const countsByChoiceId = new Map();
-      data.forEach((row) => {
-        countsByChoiceId.set(row.choice_id, (countsByChoiceId.get(row.choice_id) || 0) + 1);
-      });
-
-      const total = data.length;
-      const chartItems = currentChoices
-        .map((choice, index) => {
-          const count = countsByChoiceId.get(choice.id) || 0;
-          return {
-            label: choice.label,
-            count,
-            color: PIE_COLORS[index % PIE_COLORS.length]
-          };
-        })
-        .filter(item => item.count > 0)
-        .sort((a, b) => b.count - a.count);
-
-      renderPieChart(chartItems, total);
-    }
-
-    function renderChoices() {
-      els.choicesWrap.innerHTML = currentChoices.map(choice => `
-        <label class="choice block rounded-2xl p-4 cursor-pointer">
-          <div class="flex items-start gap-3">
-            <input type="radio" name="choice" value="${choice.id}" class="mt-1 h-4 w-4 shrink-0" />
-            <div class="font-medium leading-snug text-slate-900">${choice.label}</div>
-          </div>
-        </label>
-      `).join("");
-
-      animate(".choice", {
-        opacity: [0, 1],
-        translateY: [14, 0],
-        delay: stagger(60),
-        duration: 450,
-        ease: "out(3)"
-      });
-    }
-
-    function applySavedTopicsToButtons() {
-      const saved = new Set(getSavedTopics());
-      document.querySelectorAll(".topic-btn").forEach(btn => {
-        btn.classList.toggle("active", saved.has(btn.dataset.topic));
-      });
-    }
-
-    function renderTopics() {
-      els.topicsWrap.innerHTML = TOPICS.map(topic => `
-        <button type="button" data-topic="${topic}" class="topic-btn rounded-full px-4 py-2 text-sm">
-          ${topic}
-        </button>
-      `).join("");
-
-      applySavedTopicsToButtons();
-
-      els.topicsWrap.querySelectorAll(".topic-btn").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          btn.classList.toggle("active");
-          await saveTopics();
-        });
-      });
-
-      animate(".topic-btn", {
-        opacity: [0, 1],
-        scale: [0.96, 1],
-        delay: stagger(30),
-        duration: 360,
-        ease: "out(3)"
-      });
-    }
-
-    function renderHistory() {
-      els.historyWrap.innerHTML = HISTORY_ITEMS.map(item => {
-        const barSegments = item.results
-          .map(result => `<div class="${result.barClass} h-full" style="width: ${result.percent}%"></div>`)
-          .join("");
-        const labels = item.results
-          .map(result => `<span class="${result.textClass}">${result.percent}% ${result.label}</span>`)
-          .join("");
-
-        return `
-        <article class="history-card">
-          <h4 class="font-semibold text-slate-800 mb-3">${item.question}</h4>
-
-          <div class="flex h-3 w-full overflow-hidden rounded-full bg-slate-100 mb-3">
-            ${barSegments}
-          </div>
-
-          <div class="flex justify-between text-sm font-medium">
-            ${labels}
-          </div>
-        </article>
-      `;
-      }).join("");
-    }
-
-    function animateHero() {
-      const heroWordOne = document.getElementById("heroWordOne");
-      const heroWordTwo = document.getElementById("heroWordTwo");
-      const heroWordTail = document.getElementById("heroWordTail");
-      const heroLine = document.getElementById("heroLine");
-
-      const heroLines = [
-        ["One", "question", "once a week."],
-        ["Your", "voice", "once a week."]
-      ];
-
-      let heroIndex = 0;
-
-      function setHeroLine(index) {
-        const [first, highlighted, tail] = heroLines[index];
-        heroWordOne.textContent = `${first} `;
-        heroWordTwo.textContent = highlighted;
-        heroWordTail.textContent = ` ${tail}`;
-      }
-
-      setHeroLine(heroIndex);
-
-      animate(heroLine, {
-        opacity: [0, 1],
-        translateY: [12, 0],
-        duration: 500,
-        ease: "out(3)"
-      });
-
-      setInterval(() => {
-        animate(heroLine, {
-          opacity: [1, 0],
-          translateY: [0, -8],
-          duration: 220,
-          ease: "in(2)",
-          onComplete: () => {
-            heroIndex = (heroIndex + 1) % heroLines.length;
-            setHeroLine(heroIndex);
-
-            animate(heroLine, {
-              opacity: [0, 1],
-              translateY: [10, 0],
-              duration: 300,
-              ease: "out(3)"
-            });
-
-            animate(heroWordTwo, {
-              scale: [1, 1.06, 1],
-              duration: 550,
-              ease: "inOut(2)"
-            });
-          }
-        });
-      }, 2500);
-    }
-
-    function openNotifyModal() {
-      els.notifyModal.classList.add("open");
-      els.notifyModal.setAttribute("aria-hidden", "false");
-    }
-
-    function closeNotifyModal() {
-      els.notifyModal.classList.remove("open");
-      els.notifyModal.setAttribute("aria-hidden", "true");
-      els.notifyMsg.textContent = "";
-    }
-
-    function setNotifyChannel(channel) {
-      notifyChannel = channel;
-      document.querySelectorAll(".notify-channel").forEach(btn => {
-        const active = btn.dataset.channel === channel;
-        btn.classList.toggle("bg-sky-100", active);
-        btn.classList.toggle("border-sky-400", active);
-      });
-      els.notifyInput.placeholder = channel === "email" ? "name@email.com" : "5551234567";
-    }
-
-    function hydrateQuestion(question) {
-      currentQuestion = question;
-      els.questionText.textContent = question.question_text;
-      const now = Date.now();
-      const starts = new Date(question.starts_at).getTime();
-      const ends = new Date(question.ends_at).getTime();
-      setStatus(now >= starts && now <= ends ? "Open" : "Closed");
-
-      els.prevQuestionBtn.disabled = questionIndex === 0;
-      els.nextQuestionBtn.disabled = questionIndex >= questionTimeline.length - 1;
-    }
-
-    async function loadQuestionTimeline() {
-      const now = new Date().toISOString();
-
-      const { data, error } = await supabase
-        .from("questions")
-        .select("id, question_text, starts_at, ends_at, status")
-        .lte("starts_at", now)
-        .order("starts_at", { ascending: true });
-
-      if (error) throw error;
-      if (!data || data.length === 0) throw new Error("No questions found");
-      return data;
-    }
-
-    async function loadChoices(questionId) {
-      const { data, error } = await supabase
-        .from("choices")
-        .select("*")
-        .eq("question_id", questionId);
-
-      if (error) throw error;
-
-      return (data || [])
-        .map((choice, index) => ({
-          id: choice.id,
-          label: choice.label || choice.choice_text || choice.answer_text || choice.text || `Option ${index + 1}`,
-          sort_order: choice.sort_order ?? choice.display_order ?? choice.position ?? index
-        }))
-        .sort((a, b) => a.sort_order - b.sort_order);
-    }
-
-    async function saveTopics() {
-      const selectedTopics = getActiveTopics();
-      saveTopicsLocal(selectedTopics);
-
-      if (!savedResponseId) {
-        els.topicMsg.textContent = "Topics saved.";
-        setTimeout(() => { els.topicMsg.textContent = ""; }, 1200);
-        return;
-      }
-
-      const { error } = await supabase
-        .from("responses")
-        .update({ selected_topics: selectedTopics })
-        .eq("id", savedResponseId);
-
-      els.topicMsg.textContent = error ? error.message : "Topics saved.";
-      setTimeout(() => { els.topicMsg.textContent = ""; }, 1200);
-    }
-
-    function lockResponseForm(message) {
-      els.submitBtn.textContent = "Submitted";
-      els.submitBtn.disabled = true;
-      els.submitBtn.classList.add("opacity-60", "cursor-not-allowed");
-      els.submitMsg.textContent = message;
-    }
-
-    async function restoreExistingResponse(questionId) {
-      if (getRespondedQuestionIds().includes(questionId)) {
-        lockResponseForm("You already responded to this question.");
-      }
-
-      const localId = localStorage.getItem(`response_${questionId}`);
-      const userId = getUserId();
-
-      let data = null;
-      let error = null;
-
-      if (localId) {
-        const response = await supabase
-          .from("responses")
-          .select("id, selected_topics")
-          .eq("id", localId)
-          .maybeSingle();
-        data = response.data;
-        error = response.error;
-      }
-
-      if (!data) {
-        const response = await supabase
-          .from("responses")
-          .select("id, selected_topics")
-          .eq("question_id", questionId)
-          .eq("session_id", userId)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        data = response.data;
-        error = response.error;
-      }
-
-      if (error || !data) return;
-
-      markResponded(questionId);
-      savedResponseId = data.id;
-      localStorage.setItem(`response_${questionId}`, savedResponseId);
-      lockResponseForm("You already responded to this question.");
-
-      if (Array.isArray(data.selected_topics)) {
-        saveTopicsLocal(data.selected_topics);
-        applySavedTopicsToButtons();
-      }
-    }
-
-    async function showQuestionAt(index) {
-      questionIndex = index;
-      const question = questionTimeline[questionIndex];
-      if (!question) return;
-
-      resetQuestionState();
-      hydrateQuestion(question);
-
-      currentChoices = await loadChoices(question.id);
-      renderChoices();
-      await restoreExistingResponse(question.id);
-    }
-
-    async function submitVote(e) {
-      e.preventDefault();
-      els.submitMsg.textContent = "";
-
-      const questionId = currentQuestion.id;
-      if (getRespondedQuestionIds().includes(questionId)) {
-        lockResponseForm("You already responded to this question.");
-        return;
-      }
-
-      const choiceId = getSelectedChoiceId();
-      if (!choiceId) {
-        els.submitMsg.textContent = "Pick an answer first.";
-        return;
-      }
-
-      disableForm(true);
-
-      const payload = {
-        question_id: questionId,
-        choice_id: choiceId,
-        comment: els.comment.value.trim() || null,
-        selected_topics: getSavedTopics(),
-        session_id: getUserId()
       };
-
-      const { data, error } = await supabase
-        .from("responses")
-        .insert(payload)
-        .select("id")
-        .single();
-
-      disableForm(false);
-
-      if (error) {
-        els.submitMsg.textContent = error.message;
-        return;
+    </script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <style>
+      .topo-texture {
+        background-image: radial-gradient(circle at 1px 1px, rgba(82, 96, 103, 0.09) 1px, transparent 0);
+        background-size: 24px 24px;
       }
 
-      savedResponseId = data.id;
-      localStorage.setItem(`response_${questionId}`, savedResponseId);
-      markResponded(questionId);
-
-      els.submitMsg.textContent = "Saved.";
-      els.submitBtn.textContent = "Submitted";
-      els.submitBtn.disabled = true;
-      els.submitBtn.classList.add("opacity-60", "cursor-not-allowed");
-
-      animate("#questionBlock, #voteForm", {
-        opacity: [1, 0],
-        translateY: [0, -12],
-        duration: 320,
-        ease: "out(2)",
-        onComplete: () => {
-          els.questionBlock.classList.add("hidden");
-          els.voteForm.classList.add("hidden");
-          els.thankYouState.classList.remove("hidden");
-
-          animate("#thankYouState", {
-            opacity: [0, 1],
-            scale: [0.95, 1],
-            duration: 380,
-            ease: "out(3)",
-            onComplete: () => {
-              showCurrentTally(questionId);
-            }
-          });
-        }
-      });
-    }
-
-    async function saveNotification(e) {
-      e.preventDefault();
-      els.notifyMsg.textContent = "";
-
-      const contactValue = els.notifyInput.value.trim();
-      if (!contactValue) {
-        els.notifyMsg.textContent = "Enter email or phone.";
-        return;
+      .hero-grid {
+        background-image: linear-gradient(rgba(31, 42, 46, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(31, 42, 46, 0.04) 1px, transparent 1px);
+        background-size: 48px 48px;
       }
+    </style>
+  </head>
+  <body class="bg-cream text-charcoal antialiased">
+    <div class="min-h-screen">
+      <header class="sticky top-0 z-30 border-b border-charcoal/10 bg-cream/95 backdrop-blur">
+        <nav class="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+          <a href="index.html" class="text-lg font-semibold tracking-tight">SedroWoolley.us</a>
+          <div class="hidden items-center gap-6 text-sm font-medium md:flex">
+            <a class="nav-link" href="voice.html">Voice</a>
+            <a class="nav-link" href="#decisions">Decisions</a>
+            <a class="nav-link" href="#maps">Maps</a>
+            <a class="nav-link" href="#agenda">Agenda</a>
+          </div>
+          <a
+            href="#subscribe"
+            class="interactive-btn rounded-full bg-charcoal px-4 py-2 text-sm font-semibold text-cream transition hover:bg-teal"
+            >Subscribe</a
+          >
+        </nav>
+      </header>
 
-      const userId = getUserId();
-      const payload = {
-        user_id: userId,
-        channel: notifyChannel,
-        email: notifyChannel === "email" ? contactValue : null,
-        phone: notifyChannel === "sms" ? contactValue : null,
-        session_id: userId,
-        is_active: true
-      };
+      <main>
+        <section class="hero-grid topo-texture border-b border-charcoal/10">
+          <div class="mx-auto max-w-6xl px-4 pb-20 pt-20 sm:px-6 lg:px-8 lg:pb-28 lg:pt-28">
+            <p class="mb-6 text-sm font-semibold uppercase tracking-[0.18em] text-slate">Civic signal for Sedro-Woolley</p>
+            <h1 class="max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+              Local questions. Local decisions. Local maps.
+            </h1>
+            <p class="mt-6 max-w-2xl text-lg text-slate">
+              Plain-English updates for the Sedro-Woolley community.
+            </p>
+          </div>
+        </section>
 
-      const conflictColumn = notifyChannel === "email" ? "email" : "phone";
-      const { error } = await supabase
-        .from("notify_subscriptions")
-        .upsert(payload, { onConflict: conflictColumn });
+        <section class="mx-auto -mt-10 max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div
+            id="weekly-cta"
+            class="reveal rounded-3xl border border-teal/20 bg-gradient-to-br from-mist via-[#ECF6F4] to-sand p-8 shadow-civic md:p-10"
+          >
+            <p class="text-sm font-semibold uppercase tracking-[0.15em] text-teal">Weekly voice</p>
+            <div class="mt-4 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 class="text-3xl font-semibold tracking-tight sm:text-4xl">Take this week’s community survey</h2>
+                <p class="mt-3 max-w-2xl text-slate">
+                  Share what matters before the next meeting cycle. Responses stay focused, local, and transparent.
+                </p>
+              </div>
+              <a
+                href="voice.html"
+                class="interactive-btn inline-flex items-center justify-center rounded-full bg-teal px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-teal/20 transition hover:-translate-y-0.5"
+              >
+                Open Voice Survey
+              </a>
+            </div>
+          </div>
+        </section>
 
-      if (error) {
-        els.notifyMsg.textContent = error.message;
-        return;
-      }
+        <section class="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+          <div class="mb-8 flex items-end justify-between">
+            <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">Recent Voice</h2>
+            <a href="voice.html" class="text-sm font-semibold text-teal hover:text-charcoal">View All Results</a>
+          </div>
+          <div id="recent-voice-list" class="space-y-4"></div>
+        </section>
 
-      els.notifyMsg.textContent = "Saved. Thanks!";
-      els.notifyForm.reset();
-      getUserId();
-      setTimeout(closeNotifyModal, 550);
-    }
+        <section id="decisions" class="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
+          <h2 class="mb-8 text-2xl font-semibold tracking-tight sm:text-3xl">Recent Decisions</h2>
+          <div class="reveal rounded-3xl border border-charcoal/10 bg-white/60 p-7 shadow-civic sm:p-10">
+            <div id="decisions-list" class="relative ml-2 border-l border-charcoal/20 pl-6"></div>
+          </div>
+        </section>
 
-    function runBackgroundMotion() {
-      animate("#blob1", {
-        translateX: [0, 20, -8, 0],
-        translateY: [0, -12, 8, 0],
-        scale: [1, 1.05, 0.97, 1],
-        duration: 11000,
-        loop: true,
-        alternate: true,
-        ease: "inOutSine"
-      });
+        <section id="maps" class="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8">
+          <div class="reveal overflow-hidden rounded-3xl border border-charcoal/10 bg-white/70 shadow-civic">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-charcoal/10 px-6 py-5">
+              <div>
+                <h2 class="text-2xl font-semibold tracking-tight">Maps</h2>
+                <p class="text-sm text-slate">Layered local context, built for upcoming civic data feeds.</p>
+              </div>
+              <div id="map-layer-tabs" class="flex flex-wrap gap-2"></div>
+            </div>
+            <div id="map" class="h-[420px] w-full"></div>
+            <div class="grid gap-3 border-t border-charcoal/10 bg-cream/70 px-6 py-4 text-sm text-slate sm:grid-cols-3">
+              <p><span class="font-semibold text-charcoal">Legend:</span> active layer markers are placeholders.</p>
+              <p><span class="font-semibold text-charcoal">Source:</span> static mock data in app.js.</p>
+              <p><span class="font-semibold text-charcoal">Future:</span> MCP-fed GeoJSON layer loading ready.</p>
+            </div>
+          </div>
+        </section>
+      </main>
 
-      animate("#blob2", {
-        translateX: [0, -16, 10, 0],
-        translateY: [0, 14, -10, 0],
-        scale: [1, 0.96, 1.04, 1],
-        duration: 13000,
-        loop: true,
-        alternate: true,
-        ease: "inOutSine"
-      });
+      <footer id="subscribe" class="border-t border-charcoal/10 bg-white/40">
+        <div class="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+          <div>
+            <p class="text-base font-semibold">SedroWoolley.us</p>
+            <p class="mt-2 text-sm text-slate">Independent local civic resource for Sedro-Woolley.</p>
+          </div>
+          <form class="flex w-full max-w-md gap-2" action="#" method="post">
+            <input
+              type="email"
+              placeholder="Email for updates"
+              class="w-full rounded-full border border-charcoal/20 bg-cream px-4 py-2.5 text-sm outline-none ring-teal/30 transition focus:ring"
+            />
+            <button class="interactive-btn rounded-full bg-charcoal px-5 py-2.5 text-sm font-semibold text-cream">Subscribe</button>
+          </form>
+        </div>
+      </footer>
+    </div>
 
-      animate("#blob3", {
-        translateX: [0, 14, -12, 0],
-        translateY: [0, -10, 12, 0],
-        scale: [1, 1.03, 0.96, 1],
-        duration: 15000,
-        loop: true,
-        alternate: true,
-        ease: "inOutSine"
-      });
-    }
-
-    async function init() {
-      renderTopics();
-      renderHistory();
-      animateHero();
-      runBackgroundMotion();
-      setNotifyChannel("email");
-      getSessionId();
-      getUserId();
-
-      try {
-        questionTimeline = await loadQuestionTimeline();
-        questionIndex = questionTimeline.length - 1;
-        await showQuestionAt(questionIndex);
-
-        animate(".glass", {
-          opacity: [0, 1],
-          translateY: [18, 0],
-          duration: 550,
-          ease: "out(3)"
-        });
-      } catch (err) {
-        setStatus("Offline");
-        els.questionText.textContent = "No active question right now.";
-        els.choicesWrap.innerHTML = `<p class="tiny">Check back later.</p>`;
-        els.voteForm.style.display = "none";
-        console.error(err);
-      }
-    }
-
-    els.voteForm.addEventListener("submit", submitVote);
-    els.notifyToggle.addEventListener("click", openNotifyModal);
-    els.notifyClose.addEventListener("click", closeNotifyModal);
-    els.notifyModal.addEventListener("click", (e) => {
-      if (e.target === els.notifyModal) closeNotifyModal();
-    });
-    document.querySelectorAll(".notify-channel").forEach(btn => {
-      btn.addEventListener("click", () => setNotifyChannel(btn.dataset.channel));
-    });
-    els.notifyForm.addEventListener("submit", saveNotification);
-    els.prevQuestionBtn.addEventListener("click", async () => {
-      if (questionIndex > 0) await showQuestionAt(questionIndex - 1);
-    });
-    els.nextQuestionBtn.addEventListener("click", async () => {
-      if (questionIndex < questionTimeline.length - 1) await showQuestionAt(questionIndex + 1);
-    });
-    init();
-  </script>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+      integrity="sha256-CxLNt4NsMprRjM4m6CQQfghYvM0TQ6w8bNN8feg8Z2Q="
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="app.js"></script>
+  </body>
 </html>
