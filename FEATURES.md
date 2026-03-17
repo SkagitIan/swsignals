@@ -2,6 +2,11 @@
 
 This file tracks user-facing features and feature-level changes.
 
+## 0) SEO/social metadata tags for public pages
+- **Current behavior:** Home and Voice pages now include canonical URLs, Open Graph/Twitter social tags, and geo metadata for Sedro-Woolley.
+- **Last updated:** 2026-03-17
+- **Change note:** Added page-specific metadata in each `<head>` so search and social previews resolve to production URLs with location context.
+
 ## 1) Weekly civic question + voting
 - **Current behavior:** Users now load the weekly question and answer choices from Supabase, choose one answer, and submit.
 - **Last updated:** 2026-03-17
