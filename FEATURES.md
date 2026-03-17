@@ -2,6 +2,11 @@
 
 This file tracks user-facing features and feature-level changes.
 
+## 10) Crawl indexing defaults (robots + sitemap)
+- **Current behavior:** Search crawlers are allowed across the site, and a sitemap is published at the root listing the home and Voice pages on the production domain.
+- **Last updated:** 2026-03-17
+- **Change note:** Added `robots.txt` and `sitemap.xml` so indexing rules and canonical crawl targets stay explicit for search engines.
+
 ## 0) SEO/social metadata tags for public pages
 - **Current behavior:** Home and Voice pages now include canonical URLs, Open Graph/Twitter social tags, and geo metadata for Sedro-Woolley.
 - **Last updated:** 2026-03-17
