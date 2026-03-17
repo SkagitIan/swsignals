@@ -38,6 +38,25 @@
           Each tool is collapsed by default. Click a tool name to open it.
         </div>
 
+        <section class="rounded-2xl border border-black/10 bg-white/70 p-5">
+          <h2 class="text-lg font-semibold">Supabase connection</h2>
+          <p class="mt-2 text-sm text-slate-700">Add your Supabase URL and anon key once, then the tools below will load your existing records so you can edit them.</p>
+          <form id="supabase-config-form" class="mt-4 grid gap-3 rounded-xl border border-black/10 bg-[#faf7f0] p-4">
+            <label class="text-sm">Supabase URL
+              <input id="supabase-url" type="url" placeholder="https://YOUR-PROJECT.supabase.co" class="mt-1 w-full rounded-lg border border-black/20 px-3 py-2" />
+            </label>
+            <label class="text-sm">Supabase anon key
+              <input id="supabase-anon-key" type="password" placeholder="eyJ..." class="mt-1 w-full rounded-lg border border-black/20 px-3 py-2" />
+            </label>
+            <div class="flex flex-wrap gap-2">
+              <button type="submit" class="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white">Save Supabase config</button>
+              <button id="supabase-config-clear" type="button" class="rounded-full border border-black/20 px-4 py-2 text-sm font-semibold">Clear saved config</button>
+            </div>
+            <p class="text-xs text-slate-600">Find these values in Supabase → Project Settings → API.</p>
+          </form>
+          <p id="supabase-config-status" class="mt-3 hidden rounded-xl border px-3 py-2 text-sm"></p>
+        </section>
+
         <section class="rounded-2xl border border-black/10 bg-white/70">
           <button data-tool-toggle="voices-tool" class="flex w-full items-center justify-between px-5 py-4 text-left">
             <span class="text-lg font-semibold">Tool 1: Voice Q&A Manager</span>
@@ -122,14 +141,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-      const supabaseConfig = {
-        url: window.SUPABASE_URL || '',
-        anonKey: window.SUPABASE_ANON_KEY || ''
+      const STORAGE_KEYS = {
+        url: 'dashboard_supabase_url',
+        anonKey: 'dashboard_supabase_anon_key'
       };
-      const supabaseClient =
-        window.supabase && supabaseConfig.url && supabaseConfig.anonKey
-          ? window.supabase.createClient(supabaseConfig.url, supabaseConfig.anonKey)
-          : null;
+
+      let supabaseClient = null;
 
       const loginForm = document.getElementById('dashboard-login-form');
       const passwordInput = document.getElementById('dashboard-password');
@@ -146,6 +163,11 @@
       const decisionsListEl = document.getElementById('decisions-list');
       const decisionForm = document.getElementById('decision-form');
       const decisionResetBtn = document.getElementById('decision-reset');
+      const supabaseConfigForm = document.getElementById('supabase-config-form');
+      const supabaseUrlInput = document.getElementById('supabase-url');
+      const supabaseAnonKeyInput = document.getElementById('supabase-anon-key');
+      const supabaseConfigStatusEl = document.getElementById('supabase-config-status');
+      const clearSupabaseConfigBtn = document.getElementById('supabase-config-clear');
 
       function showMessage(text, isError = false) {
         messageEl.textContent = text;
@@ -157,6 +179,26 @@
         element.textContent = text;
         element.classList.remove('hidden');
         element.className = `mt-3 rounded-xl border px-3 py-2 text-sm ${isError ? 'border-red-300 bg-red-50 text-red-700' : 'border-teal-300 bg-teal-50 text-teal-700'}`;
+      }
+
+      function currentSupabaseConfig() {
+        return {
+          url: window.SUPABASE_URL || window.localStorage.getItem(STORAGE_KEYS.url) || '',
+          anonKey: window.SUPABASE_ANON_KEY || window.localStorage.getItem(STORAGE_KEYS.anonKey) || ''
+        };
+      }
+
+      function refreshSupabaseClient() {
+        const config = currentSupabaseConfig();
+        if (window.supabase && config.url && config.anonKey) {
+          supabaseClient = window.supabase.createClient(config.url, config.anonKey);
+          showToolStatus(supabaseConfigStatusEl, 'Supabase is configured. Tools can now load existing records.');
+          return true;
+        }
+
+        supabaseClient = null;
+        showToolStatus(supabaseConfigStatusEl, 'Supabase config is missing. Add URL and anon key to load existing records.', true);
+        return false;
       }
 
       function toLocalDateTimeValue(isoString) {
@@ -220,7 +262,7 @@
 
       async function loadVoiceQuestions() {
         if (!supabaseClient) {
-          voicesListEl.innerHTML = '<p class="text-sm text-slate-600">Supabase config is missing. Add keys to enable this tool.</p>';
+          voicesListEl.innerHTML = '<p class="text-sm text-slate-600">Supabase config is missing. Add URL + anon key in the Supabase connection panel above.</p>';
           return;
         }
 
@@ -390,7 +432,7 @@
       newQuestionForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         if (!supabaseClient) {
-          showToolStatus(voicesStatusEl, 'Supabase config is missing. Add keys first.', true);
+          showToolStatus(voicesStatusEl, 'Supabase config is missing. Add URL + anon key first.', true);
           return;
         }
 
@@ -445,7 +487,7 @@
 
       async function loadDecisions() {
         if (!supabaseClient) {
-          decisionsListEl.innerHTML = '<p class="text-sm text-slate-600">Supabase config is missing. Add keys to enable this tool.</p>';
+          decisionsListEl.innerHTML = '<p class="text-sm text-slate-600">Supabase config is missing. Add URL + anon key in the Supabase connection panel above.</p>';
           return;
         }
 
@@ -508,7 +550,7 @@
       decisionForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         if (!supabaseClient) {
-          showToolStatus(decisionsStatusEl, 'Supabase config is missing. Add keys first.', true);
+          showToolStatus(decisionsStatusEl, 'Supabase config is missing. Add URL + anon key first.', true);
           return;
         }
 
@@ -593,9 +635,43 @@
         showMessage('Access granted.');
         loginSection.classList.add('hidden');
         contentSection.classList.remove('hidden');
+        refreshSupabaseClient();
         await loadVoiceQuestions();
         await loadDecisions();
       });
+
+      supabaseConfigForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const url = supabaseUrlInput.value.trim();
+        const anonKey = supabaseAnonKeyInput.value.trim();
+
+        if (!url || !anonKey) {
+          showToolStatus(supabaseConfigStatusEl, 'Both URL and anon key are required.', true);
+          return;
+        }
+
+        window.localStorage.setItem(STORAGE_KEYS.url, url);
+        window.localStorage.setItem(STORAGE_KEYS.anonKey, anonKey);
+        refreshSupabaseClient();
+
+        if (!contentSection.classList.contains('hidden')) {
+          await loadVoiceQuestions();
+          await loadDecisions();
+        }
+      });
+
+      clearSupabaseConfigBtn.addEventListener('click', () => {
+        window.localStorage.removeItem(STORAGE_KEYS.url);
+        window.localStorage.removeItem(STORAGE_KEYS.anonKey);
+        supabaseUrlInput.value = '';
+        supabaseAnonKeyInput.value = '';
+        refreshSupabaseClient();
+      });
+
+      const initialConfig = currentSupabaseConfig();
+      supabaseUrlInput.value = initialConfig.url;
+      supabaseAnonKeyInput.value = initialConfig.anonKey;
+      refreshSupabaseClient();
 
       attachToolToggles();
     </script>
