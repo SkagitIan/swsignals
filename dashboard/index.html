@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard | SedroWoolley.us</title>
+    <meta name="description" content="Password-protected dashboard for SedroWoolley.us updates." />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-cream text-charcoal antialiased" style="background:#F7F4EE;color:#1F2A2E;">
+    <header class="border-b border-black/10 bg-white/70">
+      <nav class="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-4 text-sm font-medium sm:px-6 lg:px-8">
+        <a href="../" class="font-semibold">SedroWoolley.us</a>
+        <div class="flex items-center gap-5">
+          <a class="text-teal hover:text-charcoal" href="../voice.html">Voice</a>
+          <a class="text-teal hover:text-charcoal" href="../decisions/">Decisions</a>
+          <a class="text-teal hover:text-charcoal" href="./">Dashboard</a>
+        </div>
+      </nav>
+    </header>
+
+    <main class="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+      <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">Dashboard</h1>
+      <p class="mt-3 text-sm text-slate-700">Enter the dashboard password to view private admin content.</p>
+
+      <section id="login-section" class="mt-8 max-w-md rounded-2xl border border-black/10 bg-white/70 p-6">
+        <form id="dashboard-login-form" class="grid gap-3">
+          <label for="dashboard-password" class="text-sm font-medium">Password</label>
+          <input id="dashboard-password" type="password" class="rounded-full border border-black/20 px-4 py-2" required />
+          <button type="submit" class="rounded-full bg-black px-5 py-2 text-sm font-semibold text-white">Unlock dashboard</button>
+          <p id="dashboard-message" class="hidden rounded-xl border px-3 py-2 text-sm"></p>
+        </form>
+      </section>
+
+      <section id="dashboard-content" class="mt-8 hidden rounded-2xl border border-black/10 bg-white/70 p-6">
+        <h2 class="text-xl font-semibold">Private content placeholder</h2>
+        <p class="mt-2 text-sm text-slate-700">This area is ready to load future dashboard content from Supabase.</p>
+        <div id="dashboard-placeholder" class="mt-4 rounded-xl border border-dashed border-black/20 bg-[#faf7f0] p-4 text-sm text-slate-700">
+          No dashboard content yet. Add rows in Supabase table <code>dashboard_content</code> to populate this area.
+        </div>
+      </section>
+    </main>
+
+    <footer class="border-t border-black/10 bg-white/40">
+      <div class="mx-auto max-w-5xl px-4 py-8 text-sm text-slate-700 sm:px-6 lg:px-8">
+        <p class="font-semibold text-black">SedroWoolley.us</p>
+        <p class="mt-1">This website is not affiliated with the City of Sedro-Woolley or any other government agency.</p>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+      const supabaseConfig = {
+        url: window.SUPABASE_URL || '',
+        anonKey: window.SUPABASE_ANON_KEY || ''
+      };
+      const supabaseClient =
+        window.supabase && supabaseConfig.url && supabaseConfig.anonKey
+          ? window.supabase.createClient(supabaseConfig.url, supabaseConfig.anonKey)
+          : null;
+
+      const loginForm = document.getElementById('dashboard-login-form');
+      const passwordInput = document.getElementById('dashboard-password');
+      const messageEl = document.getElementById('dashboard-message');
+      const loginSection = document.getElementById('login-section');
+      const contentSection = document.getElementById('dashboard-content');
+      const placeholderEl = document.getElementById('dashboard-placeholder');
+
+      function showMessage(text, isError = false) {
+        messageEl.textContent = text;
+        messageEl.classList.remove('hidden');
+        messageEl.className = `rounded-xl border px-3 py-2 text-sm ${isError ? 'border-red-300 bg-red-50 text-red-700' : 'border-teal-300 bg-teal-50 text-teal-700'}`;
+      }
+
+      async function loadPlaceholderContent() {
+        if (!supabaseClient) return;
+        const { data } = await supabaseClient
+          .from('dashboard_content')
+          .select('title, body')
+          .eq('is_active', true)
+          .order('updated_at', { ascending: false })
+          .limit(1);
+
+        if (data && data.length) {
+          placeholderEl.innerHTML = `<p class="font-semibold">${data[0].title}</p><p class="mt-2">${data[0].body}</p>`;
+        }
+      }
+
+      async function checkPassword(inputPassword) {
+        if (!supabaseClient) {
+          showMessage('Supabase is not configured on this page.', true);
+          return false;
+        }
+        const { data, error } = await supabaseClient
+          .from('dashboard_passwords')
+          .select('password')
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+
+        if (error || !data) return false;
+        return inputPassword === data.password;
+      }
+
+      loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const inputPassword = passwordInput.value.trim();
+        if (!inputPassword) {
+          showMessage('Please enter a password.', true);
+          return;
+        }
+
+        const valid = await checkPassword(inputPassword);
+        if (!valid) {
+          showMessage('Incorrect password.', true);
+          return;
+        }
+
+        showMessage('Access granted.');
+        loginSection.classList.add('hidden');
+        contentSection.classList.remove('hidden');
+        await loadPlaceholderContent();
+      });
+    </script>
+  </body>
+</html>

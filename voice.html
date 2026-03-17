@@ -97,9 +97,9 @@
         <a href="index.html" class="text-lg font-semibold tracking-tight">SedroWoolley.us</a>
         <div class="hidden items-center gap-6 text-sm font-medium md:flex">
           <a class="nav-link text-teal" href="voice.html">Voice</a>
-          <a class="nav-link" href="index.html#decisions">Decisions</a>
+          <a class="nav-link" href="decisions/">Decisions</a>
           <a class="nav-link" href="index.html#maps">Maps</a>
-          <a class="nav-link" href="index.html#agenda">Agenda</a>
+          <a class="nav-link" href="dashboard/">Dashboard</a>
         </div>
         <a href="index.html#subscribe" class="interactive-btn rounded-full bg-charcoal px-4 py-2 text-sm font-semibold text-cream">Subscribe</a>
       </nav>
@@ -168,12 +168,22 @@
 
       <section class="mt-12">
         <div class="mb-6 flex items-end justify-between">
-          <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">Recent Voice</h2>
+          <div>
+            <h2 class="text-2xl font-semibold tracking-tight sm:text-3xl">Recent Voice</h2>
+            <p class="mt-2 text-sm text-slate">Real-Time Community Feedback from Sedro-Woolley Residents</p>
+          </div>
           <a href="voice.html" class="text-sm font-semibold text-teal hover:text-charcoal">View All Results</a>
         </div>
         <div id="recent-voice-list" class="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4"></div>
       </section>
     </main>
+
+    <footer class="border-t border-charcoal/10 bg-white/40">
+      <div class="mx-auto max-w-5xl px-4 py-8 text-sm text-slate sm:px-6 lg:px-8">
+        <p class="font-semibold text-charcoal">SedroWoolley.us</p>
+        <p class="mt-1">This website is not affiliated with the City of Sedro-Woolley or any other government agency.</p>
+      </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
     <script
